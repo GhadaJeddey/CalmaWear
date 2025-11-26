@@ -1,0 +1,1 @@
+- thresholds mtaa heart rate w max temp w stress score to be updated to more accurate medically speaking values .
