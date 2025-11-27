@@ -1,0 +1,87 @@
+import 'package:flutter/foundation.dart';
+import '../services/monitoring_service.dart';
+import '../models/sensor_data.dart';
+import '../models/alert.dart';
+
+class MonitoringProvider with ChangeNotifier {
+  final MonitoringService _monitoringService = MonitoringService();
+
+  SensorData? _currentSensorData;
+  List<Alert> _activeAlerts = [];
+  List<SensorData> _sensorHistory = [];
+  bool _isMonitoring = false;
+  double _stressThreshold = 70.0;
+
+  SensorData? get currentSensorData => _currentSensorData;
+  List<Alert> get activeAlerts => List.unmodifiable(_activeAlerts);
+  List<SensorData> get sensorHistory => List.unmodifiable(_sensorHistory);
+  bool get isMonitoring => _isMonitoring;
+  double get stressThreshold => _stressThreshold;
+
+  // Initialiser le monitoring
+  void initializeMonitoring() {
+    // Écouter les données des capteurs
+    _monitoringService.sensorDataStream.listen((sensorData) {
+      _currentSensorData = sensorData;
+      _sensorHistory.add(sensorData);
+
+      // Garder seulement les 100 dernières mesures
+      if (_sensorHistory.length > 100) {
+        _sensorHistory.removeAt(0);
+      }
+
+      notifyListeners();
+    });
+
+    // Écouter les alertes
+    _monitoringService.alertStream.listen((alert) {
+      _activeAlerts.add(alert);
+      notifyListeners();
+    });
+  }
+
+  // Démarrer/arrêter le monitoring
+  void toggleMonitoring() {
+    if (_isMonitoring) {
+      _monitoringService.stopMonitoring();
+    } else {
+      _monitoringService.startMonitoring();
+    }
+    _isMonitoring = !_isMonitoring;
+    notifyListeners();
+  }
+
+  // Marquer une alerte comme résolue
+  void resolveAlert(String alertId) {
+    final index = _activeAlerts.indexWhere((alert) => alert.id == alertId);
+    if (index != -1) {
+      _activeAlerts[index].isResolved = true;
+      notifyListeners();
+    }
+  }
+
+  // Supprimer une alerte résolue
+  void removeResolvedAlert(String alertId) {
+    _activeAlerts.removeWhere((alert) => alert.id == alertId);
+    notifyListeners();
+  }
+
+  // Mettre à jour le seuil de stress
+  void updateStressThreshold(double newThreshold) {
+    _stressThreshold = newThreshold;
+    notifyListeners();
+  }
+
+  // Obtenir l'historique des données pour les graphiques
+  List<SensorData> getLastHourData() {
+    final oneHourAgo = DateTime.now().subtract(const Duration(hours: 1));
+    return _sensorHistory
+        .where((data) => data.timestamp.isAfter(oneHourAgo))
+        .toList();
+  }
+
+  // Nettoyer
+  void dispose() {
+    _monitoringService.dispose();
+  }
+}

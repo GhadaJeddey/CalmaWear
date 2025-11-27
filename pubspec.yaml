@@ -14,6 +14,7 @@ dependencies:
   cloud_firestore: ^6.1.0
   provider: ^6.1.1
   shared_preferences: ^2.2.2
+  http: ^1.1.0
 
 dev_dependencies:
   flutter_test:
@@ -22,3 +23,13 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  fonts:
+    - family: LeagueSpartan
+      fonts:
+        - asset: assets/fonts/LeagueSpartan-Regular.ttf
+        - asset: assets/fonts/LeagueSpartan-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/LeagueSpartan-ExtraBold.ttf 
+          weight: 800
+        - asset: assets/fonts/LeagueSpartan-Light.ttf
+          weight: 300

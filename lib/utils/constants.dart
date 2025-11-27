@@ -12,6 +12,7 @@ class AppConstants {
 
   // Seuils
   static const defaultStressThreshold = 70.0;
+  static const defaultNotificationsEnabled = true;
   static const minStressThreshold = 50.0;
   static const maxStressThreshold = 90.0;
   static const maxHeartRate = 100.0;
