@@ -1,1 +1,18 @@
 Concernant chat_service : lezm naadel l system prompt shwaya .
+
+users/{userId}/
+  ├── planner_defaults/
+  │   ├── {todoId1}: {todoData}
+  │   ├── {todoId2}: {todoData}
+  │   └── ...
+  │
+  ├── planner_todos/
+  │   ├── 2024-01-15: {date, todos: [todoData], updatedAt, userId}
+  │   ├── 2024-01-16: {date, todos: [todoData], updatedAt, userId}
+  │   └── ...
+  │
+  └── planner_stats/
+      ├── 2024_week_2: {weekStats}
+      ├── 2024_week_3: {weekStats}
+      └── ...
+
