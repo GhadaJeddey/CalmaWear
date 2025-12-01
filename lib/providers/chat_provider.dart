@@ -8,7 +8,6 @@ class ChatProvider with ChangeNotifier {
   String? _currentView;
   ChatService get chatService => _chatService;
 
-  // Vous pouvez exposer les méthodes dont vous avez besoin
   Future<void> sendMessage(String message) async {
     await _chatService.sendMessage(message);
     notifyListeners();

@@ -17,4 +17,7 @@ class AppConstants {
   static const maxStressThreshold = 90.0;
   static const maxHeartRate = 100.0;
   static const maxTemperature = 37.5;
+
+  static const geminiApiUrl =
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
 }

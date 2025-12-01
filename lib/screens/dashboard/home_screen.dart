@@ -2,15 +2,101 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../chat/chat_screen.dart'; // 👈 Importez ChatScreen
-import '../chat/chat_history_screen.dart'; // 👈 Importez ChatHistoryScreen
+import '../../providers/planner_provider.dart';
+import '../../widgets/bottom_nav_bar.dart';
+import '../chat/chat_screen.dart';
+import '../chat/chat_history_screen.dart';
+import '../planner/planner_screen.dart';
+import '../community/community_screen.dart';
+import '../profile/profile_screen.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _currentBottomNavIndex = 0;
+  bool _isInitializing = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializePlannerProvider();
+  }
+
+  Future<void> _initializePlannerProvider() async {
+    // Get user ID from auth provider
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.currentUser;
+
+    if (user != null && user.id != null) {
+      // Initialize planner provider with user ID
+      final plannerProvider = Provider.of<PlannerProvider>(
+        context,
+        listen: false,
+      );
+      await plannerProvider.initialize(user.id!);
+    }
+
+    if (mounted) {
+      setState(() => _isInitializing = false);
+    }
+  }
+
+  void _onBottomNavTapped(int index) {
+    if (index == _currentBottomNavIndex) return;
+
+    setState(() {
+      _currentBottomNavIndex = index;
+    });
+
+    switch (index) {
+      case 0: // Accueil (déjà sur HomeScreen)
+        break;
+      case 1: // Chat
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const ChatScreen(fromScreen: 'home'),
+          ),
+          (route) => false,
+        );
+        break;
+      case 2: // Planner
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const PlannerScreen()),
+          (route) => false,
+        );
+        break;
+      case 3: // Communauté
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const CommunityScreen()),
+          (route) => false,
+        );
+        break;
+      case 4: // Profil
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const ProfileScreen()),
+          (route) => false,
+        );
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthProvider>(context).currentUser;
+
+    // Show loading while initializing
+    if (_isInitializing) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -18,21 +104,20 @@ class HomeScreen extends StatelessWidget {
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         actions: [
-          // Bouton pour accéder à l'historique des conversations
-          IconButton(
-            icon: const Icon(Icons.chat),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ChatScreen()),
-              );
-            },
-            tooltip: 'Ouvrir le chat',
-          ),
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () {
-              Provider.of<AuthProvider>(context, listen: false).signOut();
+            onPressed: () async {
+              // Clear planner data on logout
+              final plannerProvider = Provider.of<PlannerProvider>(
+                context,
+                listen: false,
+              );
+              await plannerProvider.clearUserData();
+
+              // Sign out from auth
+              await Provider.of<AuthProvider>(context, listen: false).signOut();
+
+              // Navigate to welcome
               Navigator.pushReplacementNamed(context, '/welcome');
             },
           ),
@@ -65,72 +150,100 @@ class HomeScreen extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 30),
+            // Quick actions section
+            _buildQuickActions(context),
+          ],
+        ),
+      ),
+      bottomNavigationBar: CustomBottomNavBar(
+        currentIndex: _currentBottomNavIndex,
+        onTap: _onBottomNavTapped,
+      ),
+    );
+  }
 
-            // Boutons d'action
-            Column(
-              children: [
-                // Bouton pour ouvrir le chat
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ChatScreen(),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.chat),
-                    label: const Text('Ouvrir le Chat Assistant'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
+  Widget _buildQuickActions(BuildContext context) {
+    return Column(
+      children: [
+        const Text(
+          'Accès rapide',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _buildQuickActionButton(
+              icon: Icons.calendar_today,
+              label: 'Planner',
+              onTap: () {
+                setState(() => _currentBottomNavIndex = 2);
+                _onBottomNavTapped(2);
+              },
+              color: Colors.orange,
+            ),
+            _buildQuickActionButton(
+              icon: Icons.chat,
+              label: 'Chat IA',
+              onTap: () {
+                setState(() => _currentBottomNavIndex = 1);
+                _onBottomNavTapped(1);
+              },
+              color: Colors.green,
+            ),
+            _buildQuickActionButton(
+              icon: Icons.people,
+              label: 'Communauté',
+              onTap: () {
+                setState(() => _currentBottomNavIndex = 3);
+                _onBottomNavTapped(3);
+              },
+              color: Colors.purple,
+            ),
+            _buildQuickActionButton(
+              icon: Icons.person,
+              label: 'Profil',
+              onTap: () {
+                setState(() => _currentBottomNavIndex = 4);
+                _onBottomNavTapped(4);
+              },
+              color: Colors.blue,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 
-                // Bouton pour voir l'historique
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              const ConversationHistoryScreen(),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.history),
-                    label: const Text('Voir l\'Historique'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Bouton de déconnexion
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Provider.of<AuthProvider>(
-                        context,
-                        listen: false,
-                      ).signOut();
-                      Navigator.pushReplacementNamed(context, '/welcome');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                    ),
-                    child: const Text('Se déconnecter'),
-                  ),
-                ),
-              ],
+  Widget _buildQuickActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 100,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 30, color: color),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),

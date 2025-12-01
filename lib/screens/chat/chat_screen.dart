@@ -1,15 +1,24 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
-import '../../services/chat_service.dart';
+import 'package:provider/provider.dart';
+import '../../providers/chat_provider.dart';
 import '../../models/chat_message.dart';
 import '../../utils/constants.dart';
+import '../../widgets/bottom_nav_bar.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'chat_history_screen.dart';
+import '../dashboard/home_screen.dart';
+import '../planner/planner_screen.dart';
+import '../community/community_screen.dart';
+import '../profile/profile_screen.dart';
+import '../../services/chat_service.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({Key? key}) : super(key: key);
+  final String? fromScreen; // Pour savoir d'où on vient
+
+  const ChatScreen({Key? key, this.fromScreen}) : super(key: key);
 
   @override
   _ChatScreenState createState() => _ChatScreenState();
@@ -17,22 +26,18 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
-  final ChatService _chatService = ChatService();
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
-  bool _apiConfigured = true;
+  int _currentBottomNavIndex = 3;
 
   @override
   void initState() {
     super.initState();
-    // Load demo conversation
-    _chatService.loadDemoHistory();
-    _checkApiConfiguration();
-  }
-
-  void _checkApiConfiguration() {
-    setState(() {
-      _apiConfigured = _chatService.isApiKeyConfigured();
+    // Charger la conversation de démo
+    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    chatProvider.chatService.loadDemoHistory();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToBottom();
     });
   }
 
@@ -66,11 +71,12 @@ class _ChatScreenState extends State<ChatScreen> {
     _messageController.clear();
 
     try {
-      // Send message to AI
-      await _chatService.sendMessage(message);
+      final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+      await chatProvider.sendMessage(message);
     } catch (e) {
-      print('Error sending message: $e');
-      // Show error message to user
+      if (kDebugMode) {
+        print('Error sending message: $e');
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur: ${e.toString()}'),
@@ -104,10 +110,11 @@ class _ChatScreenState extends State<ChatScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              setState(() {
-                _chatService.clearHistory();
-                _chatService.loadDemoHistory();
-              });
+              final chatProvider = Provider.of<ChatProvider>(
+                context,
+                listen: false,
+              );
+              chatProvider.clearChat();
             },
             child: const Text('Effacer', style: TextStyle(color: Colors.red)),
           ),
@@ -117,7 +124,11 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildApiStatusBanner() {
-    if (_apiConfigured) return const SizedBox();
+    final chatProvider = Provider.of<ChatProvider>(context);
+    final chatService = chatProvider.chatService;
+    final isApiConfigured = chatService.isApiKeyConfigured();
+
+    if (isApiConfigured) return const SizedBox();
 
     return Container(
       width: double.infinity,
@@ -147,8 +158,89 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  void _onBottomNavTapped(int index) {
+    if (index == _currentBottomNavIndex) return;
+
+    switch (index) {
+      case 0: // Accueil
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          (route) => false,
+        );
+        break;
+      case 1: // Chat (déjà sur ChatScreen)
+        break;
+      case 2: // Planner
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const PlannerScreen()),
+          (route) => false,
+        );
+        break;
+      case 3: // Communauté
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const CommunityScreen()),
+          (route) => false,
+        );
+        break;
+      case 4: // Profil
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const ProfileScreen()),
+          (route) => false,
+        );
+        break;
+    }
+  }
+
+  void _handleBackButton() {
+    // Retour à l'écran d'où on vient
+    switch (widget.fromScreen) {
+      case 'home':
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          (route) => false,
+        );
+        break;
+      case 'planner':
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const PlannerScreen()),
+          (route) => false,
+        );
+        break;
+      case 'community':
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const CommunityScreen()),
+          (route) => false,
+        );
+        break;
+      case 'profile':
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const ProfileScreen()),
+          (route) => false,
+        );
+        break;
+      default:
+        // Par défaut, retour à HomeScreen
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          (route) => false,
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final chatProvider = Provider.of<ChatProvider>(context);
+    final chatService = chatProvider.chatService;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -156,6 +248,10 @@ class _ChatScreenState extends State<ChatScreen> {
         backgroundColor: const Color(AppConstants.primaryColor),
         foregroundColor: Colors.white,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _handleBackButton,
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.history),
@@ -163,7 +259,7 @@ class _ChatScreenState extends State<ChatScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ConversationHistoryScreen(),
+                  builder: (context) => const ConversationHistoryScreen(),
                 ),
               );
             },
@@ -176,14 +272,13 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
       ),
-
       body: Column(
         children: [
           // API Status Banner
           _buildApiStatusBanner(),
 
           // Chat messages
-          Expanded(child: _buildMessagesList()),
+          Expanded(child: _buildMessagesList(chatService)),
 
           // Typing indicator
           if (_isLoading) _buildTypingIndicator(),
@@ -195,8 +290,8 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildMessagesList() {
-    final messages = _chatService.messageHistory;
+  Widget _buildMessagesList(ChatService chatService) {
+    final messages = chatService.messageHistory;
 
     return ListView.builder(
       controller: _scrollController,
@@ -221,7 +316,7 @@ class _ChatScreenState extends State<ChatScreen> {
             : MainAxisAlignment.start,
         children: [
           if (!isUser) ...[
-            // AI Avatar - reste inchangé
+            // AI Avatar
             Container(
               width: 40,
               height: 40,
@@ -256,7 +351,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   const SizedBox(height: 4),
                 ],
 
-                // Message bubble - reste inchangé sauf l'appel à _buildMessageText
+                // Message bubble
                 Container(
                   constraints: BoxConstraints(
                     maxWidth: MediaQuery.of(context).size.width * 0.75,
@@ -273,13 +368,10 @@ class _ChatScreenState extends State<ChatScreen> {
                       bottomRight: Radius.circular(isUser ? 4 : 20),
                     ),
                   ),
-                  child: _buildMessageText(
-                    message.text,
-                    isUser: isUser,
-                  ), // 👈 Ici ça utilise Markdown maintenant
+                  child: _buildMessageText(message.text, isUser: isUser),
                 ),
 
-                // Timestamp - reste inchangé
+                // Timestamp
                 const SizedBox(height: 4),
                 Padding(
                   padding: EdgeInsets.only(
@@ -297,7 +389,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
           if (isUser) ...[
             const SizedBox(width: 12),
-            // User Avatar - reste inchangé
+            // User Avatar
             Container(
               width: 40,
               height: 40,
@@ -326,7 +418,7 @@ class _ChatScreenState extends State<ChatScreen> {
             color: isUser ? Colors.white : Colors.black87,
             fontSize: 16,
             height: 1.4,
-            fontFamily: 'Roboto', // 👈 Force une police standard
+            fontFamily: 'Roboto',
           ),
           strong: TextStyle(
             color: isUser ? Colors.white : Colors.black87,
@@ -352,12 +444,9 @@ class _ChatScreenState extends State<ChatScreen> {
         onTapLink: (text, href, title) {
           // Gérer les liens cliquables
         },
-        builders: {
-          'code': CodeElementBuilder(), // Builder personnalisé pour le code
-        },
+        builders: {'code': CodeElementBuilder()},
       );
     } catch (e) {
-      // Fallback en cas d'erreur de rendu markdown
       if (kDebugMode) {
         print('❌ Erreur rendu Markdown: $e');
       }
@@ -576,9 +665,6 @@ class CodeElementBuilder extends MarkdownElementBuilder {
   Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
     var textContent = element.textContent;
 
-    // Determine whether this is inline code or a fenced/code block.
-    // The markdown package sets a "class" attribute (e.g. "language-dart") for fenced code blocks,
-    // while inline code typically does not have that attribute.
     final bool isInlineCode = element.attributes['class'] == null;
 
     // For inline code (backticks)
