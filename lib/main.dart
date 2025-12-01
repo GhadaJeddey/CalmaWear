@@ -9,7 +9,10 @@ import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
 import 'screens/dashboard/home_screen.dart';
 import 'screens/test/monitoring_test_screen.dart';
+import 'screens/chat/chat_screen.dart';
+import 'screens/chat/chat_history_screen.dart';
 import 'providers/monitoring_provider.dart';
+import 'providers/chat_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +32,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => MonitoringProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
       child: MaterialApp(
         title: 'CalmaWear',
@@ -41,6 +45,8 @@ class MyApp extends StatelessWidget {
           '/signup': (context) => const SignupScreen(),
           '/home': (context) => const HomeScreen(),
           '/test-monitoring': (context) => const MonitoringTestScreen(),
+          '/chat': (context) => const ChatScreen(),
+          '/chat-history': (context) => const ConversationHistoryScreen(),
         },
         debugShowCheckedModeBanner: false,
       ),
