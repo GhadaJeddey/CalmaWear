@@ -45,3 +45,6 @@ app.*.map.json
 /android/app/release
 # Visual Studio/Windows build folders
 /windows/flutter/ephemeral/
+
+# API keys and other sensitive files
+lib/config/keys.dart
