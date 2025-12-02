@@ -29,13 +29,30 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  
+  assets:
+    - assets/images/white-logo.png
+    - assets/images/blue-logo.png
+    - assets/images/white-logo-no-title.png
   fonts:
-    - family: Noto
-      fonts:
-        - asset: assets/fonts/NotoSans-Regular.ttf
-        - asset: assets/fonts/NotoSans-Bold.ttf
-          weight: 700
-    - family: NotoEmoji
-      fonts:
-        - asset: assets/fonts/NotoColorEmoji-Regular.ttf
+      - family: Noto
+        fonts:
+          - asset: assets/fonts/NotoSans-Regular.ttf
+          - asset: assets/fonts/NotoSans-Bold.ttf
+            weight: 700
+      - family: NotoEmoji
+        fonts:
+          - asset: assets/fonts/NotoColorEmoji-Regular.ttf
+      - family: League Spartan
+        fonts:
+          - asset: assets/fonts/LeagueSpartan-Regular.ttf
+            weight: 400
+          - asset: assets/fonts/LeagueSpartan-Medium.ttf
+            weight: 500
+          - asset: assets/fonts/LeagueSpartan-SemiBold.ttf
+            weight: 600
+          - asset: assets/fonts/LeagueSpartan-Bold.ttf
+            weight: 700
+          - asset: assets/fonts/LeagueSpartan-Thin.ttf
+            weight: 100
+          - asset: assets/fonts/LeagueSpartan-ExtraBold.ttf
+            weight: 800

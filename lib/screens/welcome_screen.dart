@@ -10,25 +10,21 @@ class WelcomeScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40),
           child: Column(
             children: [
-              // En-tête avec logo
-              _buildHeader(),
+              const Spacer(flex: 1),
+
+              _buildLogoSection(),
+
+              const Spacer(flex: 2),
+
+              // Description text (right above buttons)
+              _buildDescription(),
 
               const SizedBox(height: 40),
 
-              // Titre principal
-              _buildTitle(),
-
-              const SizedBox(height: 16),
-
-              // Description
-              _buildDescription(),
-
-              const Spacer(),
-
-              // Boutons d'action
+              // Action buttons
               _buildActionButtons(context),
 
               const SizedBox(height: 20),
@@ -39,61 +35,106 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
-    return const Align(
-      alignment: Alignment.centerLeft,
-      child: Icon(
-        Icons.health_and_safety,
-        size: 50,
-        color: Color(AppConstants.primaryColor),
-      ),
-    );
-  }
+  Widget _buildLogoSection() {
+    return Column(
+      children: [
+        // Logo image
+        Image.asset(
+          'assets/images/blue-logo.png',
+          width: 400,
+          height: 400,
+          fit: BoxFit.contain,
+        ),
 
-  Widget _buildTitle() {
-    return const Text(
-      'Bienvenue sur CalmaWear',
-      style: TextStyle(
-        fontSize: 28,
-        fontWeight: FontWeight.bold,
-        color: Colors.black87,
-      ),
-      textAlign: TextAlign.center,
+        const SizedBox(height: 24),
+
+        // App name
+        /*const Text(
+          'Calmawear',
+          style: TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.w400,
+            color: Color(0xFF0066FF),
+            letterSpacing: 0.5,
+            fontFamily: 'League Spartan',
+          ),
+        ),*/
+      ],
     );
   }
 
   Widget _buildDescription() {
-    return const Text(
-      'Votre compagnon pour accompagner votre enfant autiste au quotidien. Surveillance en temps réel, alertes intelligentes et soutien personnalisé.',
-      style: TextStyle(fontSize: 16, color: Colors.black54, height: 1.5),
-      textAlign: TextAlign.center,
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20),
+      child: Text(
+        'Calmawear brings gentle support to every moment for autistic children and their families. Real-time care, thoughtful alerts.',
+        style: TextStyle(
+          fontSize: 14,
+          color: Colors.black54,
+          height: 1.6,
+          fontFamily: 'League Spartan',
+        ),
+        textAlign: TextAlign.center,
+      ),
     );
   }
 
   Widget _buildActionButtons(BuildContext context) {
     return Column(
       children: [
-        // Bouton Se connecter
+        // Log In button (filled)
         SizedBox(
-          width: double.infinity,
+          width: 250,
+          height: 50,
           child: ElevatedButton(
             onPressed: () {
               Navigator.pushNamed(context, '/login');
             },
-            child: const Text('Se connecter'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0066FF),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+              ),
+              elevation: 0,
+            ),
+            child: const Text(
+              'Log In',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w500,
+                fontFamily: 'League Spartan',
+              ),
+            ),
           ),
         ),
 
         const SizedBox(height: 16),
 
-        // Bouton Créer un compte
+        // Sign Up button (outlined with light fill)
         SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
+          width: 250,
+          height: 50,
+          child: ElevatedButton(
             onPressed: () {
               Navigator.pushNamed(context, '/signup');
             },
-            child: const Text('Créer un compte'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFCAD6FF),
+              foregroundColor: const Color(0xFF0066FF),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+              ),
+              elevation: 0,
+            ),
+            child: const Text(
+              'Sign Up',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w500,
+                fontFamily: 'League Spartan',
+              ),
+            ),
           ),
         ),
       ],
