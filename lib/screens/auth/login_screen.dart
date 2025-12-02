@@ -43,31 +43,27 @@ class _LoginScreenState extends State<LoginScreen> {
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/home');
         }
-      } else {
-        // L'erreur est affichée via le Provider
       }
     }
   }
 
   void _resetPassword() {
     if (_emailController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez entrer votre email')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please enter your email')));
       return;
     }
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Réinitialiser le mot de passe'),
-        content: Text(
-          'Envoyer un email de réinitialisation à ${_emailController.text}?',
-        ),
+        title: const Text('Reset Password'),
+        content: Text('Send password reset email to ${_emailController.text}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Annuler'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
@@ -81,13 +77,11 @@ class _LoginScreenState extends State<LoginScreen> {
               );
               if (success && mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Email de réinitialisation envoyé!'),
-                  ),
+                  const SnackBar(content: Text('Password reset email sent!')),
                 );
               }
             },
-            child: const Text('Envoyer'),
+            child: const Text('Send'),
           ),
         ],
       ),
@@ -99,240 +93,345 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Consumer<AuthProvider>(
-            builder: (context, authProvider, child) {
-              return Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Bouton retour
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_back),
-                        onPressed: () => Navigator.pop(context),
-                        color: Colors.grey[600],
-                      ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24.0,
+                      vertical: 40,
                     ),
+                    child: Consumer<AuthProvider>(
+                      builder: (context, authProvider, child) {
+                        return Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Back button aligned to left
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.arrow_back,
+                                    color: Color(0xFF0066FF),
+                                  ),
+                                  onPressed: () => Navigator.pop(context),
+                                ),
+                              ),
 
-                    const SizedBox(height: 20),
+                              const SizedBox(height: 20),
 
-                    // Logo
-                    const Icon(
-                      Icons.health_and_safety,
-                      size: 80,
-                      color: Color(AppConstants.primaryColor),
-                    ),
+                              // Logo Section
+                              _buildLogoSection(),
 
-                    const SizedBox(height: 20),
+                              const SizedBox(height: 40),
 
-                    // Titre
-                    const Text(
-                      'Content de vous revoir!',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+                              // Title
+                              const Text(
+                                'Welcome Back!',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w400,
+                                  color: Color(0xFF0066FF),
+                                  fontFamily: 'League Spartan',
+                                ),
+                              ),
 
-                    const SizedBox(height: 10),
+                              const SizedBox(height: 8),
 
-                    // Sous-titre
-                    const Text(
-                      'Connectez-vous pour continuer',
-                      style: TextStyle(fontSize: 16, color: Colors.black54),
-                      textAlign: TextAlign.center,
-                    ),
+                              // Subtitle
+                              const Text(
+                                'Sign in to continue',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black54,
+                                  fontFamily: 'League Spartan',
+                                ),
+                              ),
 
-                    const SizedBox(height: 40),
+                              const SizedBox(height: 40),
 
-                    // Champ Email
-                    TextFormField(
-                      controller: _emailController,
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        prefixIcon: const Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[50],
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Veuillez entrer votre email';
-                        }
-                        if (!RegExp(
-                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                        ).hasMatch(value)) {
-                          return 'Email invalide';
-                        }
-                        return null;
+                              // Email Field
+                              TextFormField(
+                                controller: _emailController,
+                                decoration: InputDecoration(
+                                  labelText: 'Email',
+                                  labelStyle: const TextStyle(
+                                    fontFamily: 'League Spartan',
+                                    color: Colors.black54,
+                                  ),
+                                  prefixIcon: const Icon(
+                                    Icons.email_outlined,
+                                    color: Color(0xFF0066FF),
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF0066FF),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.grey[50],
+                                ),
+                                keyboardType: TextInputType.emailAddress,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your email';
+                                  }
+                                  if (!RegExp(
+                                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                                  ).hasMatch(value)) {
+                                    return 'Invalid email address';
+                                  }
+                                  return null;
+                                },
+                              ),
+
+                              const SizedBox(height: 20),
+
+                              // Password Field
+                              TextFormField(
+                                controller: _passwordController,
+                                decoration: InputDecoration(
+                                  labelText: 'Password',
+                                  labelStyle: const TextStyle(
+                                    fontFamily: 'League Spartan',
+                                    color: Colors.black54,
+                                  ),
+                                  prefixIcon: const Icon(
+                                    Icons.lock_outline,
+                                    color: Color(0xFF0066FF),
+                                  ),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscurePassword
+                                          ? Icons.visibility_outlined
+                                          : Icons.visibility_off_outlined,
+                                      color: const Color(0xFF0066FF),
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _obscurePassword = !_obscurePassword;
+                                      });
+                                    },
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF0066FF),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.grey[50],
+                                ),
+                                obscureText: _obscurePassword,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your password';
+                                  }
+                                  if (value.length < 6) {
+                                    return 'Password must be at least 6 characters';
+                                  }
+                                  return null;
+                                },
+                              ),
+
+                              const SizedBox(height: 10),
+
+                              // Forgot Password Link
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: _resetPassword,
+                                  child: const Text(
+                                    'Forgot Password?',
+                                    style: TextStyle(
+                                      color: Color(0xFF0066FF),
+                                      fontFamily: 'League Spartan',
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 30),
+
+                              // Login Button
+                              SizedBox(
+                                width: 250,
+                                height: 50,
+                                child: ElevatedButton(
+                                  onPressed:
+                                      (_isLoading || authProvider.isLoading)
+                                      ? null
+                                      : _login,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF0066FF),
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(25),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: (_isLoading || authProvider.isLoading)
+                                      ? const SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : const Text(
+                                          'Sign In',
+                                          style: TextStyle(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w500,
+                                            fontFamily: 'League Spartan',
+                                          ),
+                                        ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 20),
+
+                              // Sign Up Link
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text(
+                                    'New to CalmaWear?',
+                                    style: TextStyle(
+                                      color: Colors.black54,
+                                      fontFamily: 'League Spartan',
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pushNamed(context, '/signup');
+                                    },
+                                    child: const Text(
+                                      'Create Account',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF0066FF),
+                                        fontFamily: 'League Spartan',
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              // Error Display
+                              if (authProvider.error != null) ...[
+                                const SizedBox(height: 20),
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red[50],
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.red),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.error_outline,
+                                        color: Colors.red,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          _getErrorMessage(authProvider.error!),
+                                          style: const TextStyle(
+                                            color: Colors.red,
+                                            fontFamily: 'League Spartan',
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+
+                              // Bottom spacing
+                              const SizedBox(height: 40),
+                            ],
+                          ),
+                        );
                       },
                     ),
-
-                    const SizedBox(height: 20),
-
-                    // Champ Mot de passe
-                    TextFormField(
-                      controller: _passwordController,
-                      decoration: InputDecoration(
-                        labelText: 'Mot de passe',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[50],
-                      ),
-                      obscureText: _obscurePassword,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Veuillez entrer votre mot de passe';
-                        }
-                        if (value.length < 6) {
-                          return 'Le mot de passe doit faire au moins 6 caractères';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    // Lien mot de passe oublié
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: _resetPassword,
-                        child: const Text(
-                          'Mot de passe oublié?',
-                          style: TextStyle(
-                            color: Color(AppConstants.primaryColor),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    // Bouton de connexion
-                    ElevatedButton(
-                      onPressed: (_isLoading || authProvider.isLoading)
-                          ? null
-                          : _login,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(AppConstants.primaryColor),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: (_isLoading || authProvider.isLoading)
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Text(
-                              'Se connecter',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Lien vers inscription
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'Nouveau sur CalmaWear?',
-                          style: TextStyle(color: Colors.black54),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pushNamed(context, '/signup');
-                          },
-                          child: const Text(
-                            'Créer un compte',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Color(AppConstants.primaryColor),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    // Affichage des erreurs
-                    if (authProvider.error != null) ...[
-                      const SizedBox(height: 20),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.red[50],
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.red),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.error_outline, color: Colors.red),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                _getErrorMessage(authProvider.error!),
-                                style: const TextStyle(color: Colors.red),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
+  Widget _buildLogoSection() {
+    return Column(
+      children: [
+        // Logo image
+        Image.asset(
+          'assets/images/blue-logo.png',
+          width: 250,
+          height: 250,
+          fit: BoxFit.contain,
+        ),
+
+        const SizedBox(height: 10),
+      ],
+    );
+  }
+
   String _getErrorMessage(String error) {
     if (error.contains('user-not-found')) {
-      return 'Aucun compte trouvé avec cet email';
+      return 'No account found with this email';
     } else if (error.contains('wrong-password')) {
-      return 'Mot de passe incorrect';
+      return 'Incorrect password';
     } else if (error.contains('invalid-email')) {
-      return 'Email invalide';
+      return 'Invalid email address';
     } else if (error.contains('network-request-failed')) {
-      return 'Problème de connexion internet';
+      return 'Internet connection problem';
+    } else if (error.contains('too-many-requests')) {
+      return 'Too many attempts. Try again later';
+    } else if (error.contains('user-disabled')) {
+      return 'This account has been disabled';
     } else {
-      return error;
+      return 'An error occurred. Please try again';
     }
   }
 }
