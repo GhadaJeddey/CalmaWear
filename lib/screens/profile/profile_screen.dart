@@ -7,6 +7,8 @@ import '../chat/chat_screen.dart';
 import '../planner/planner_screen.dart';
 import '../community/community_screen.dart';
 import '../../widgets/bottom_nav_bar.dart';
+import './parent_profile.dart';
+import './child_profile.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -63,45 +65,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header avec temps
+            // Titre de la page
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+              padding: const EdgeInsets.fromLTRB(0, 20, 0, 20),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Heure
-                  Text(
-                    '16:04',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.grey[900],
-                    ),
-                  ),
-                  const SizedBox(height: 4),
                   const Text(
                     'My Profile',
                     style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0066FF),
                     ),
                   ),
-                ],
-              ),
-            ),
+                  const SizedBox(height: 20),
 
-            const Divider(height: 0, color: Color(0xFFF0F0F0), thickness: 1),
-
-            // Section profil
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
-              child: Row(
-                children: [
-                  // Avatar avec gradient bleu
+                  // Image de l'utilisateur
                   Container(
-                    width: 60,
-                    height: 60,
+                    width: 100,
+                    height: 100,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: const LinearGradient(
@@ -112,180 +94,195 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       boxShadow: [
                         BoxShadow(
                           color: const Color(0xFF0066FF).withOpacity(0.2),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
                         ),
                       ],
                     ),
                     child: const Icon(
                       Icons.person,
-                      size: 30,
+                      size: 50,
                       color: Colors.white,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  // Nom et email
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user?.name ?? 'John Doe',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        user?.email ?? 'john.doe@email.com',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 20),
+
+                  // Nom de l'utilisateur
+                  Text(
+                    user?.name ?? 'John Doe',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
                   ),
                 ],
               ),
             ),
 
-            const Divider(height: 0, color: Color(0xFFF0F0F0), thickness: 1),
-
             // Liste des options
             Expanded(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  // Parent Profile
-                  _buildProfileOption(
-                    icon: Icons.person_outline,
-                    title: 'Parent Profile',
-                    subtitle: 'Manage parent information',
-                    isFirst: true,
-                    onTap: () {
-                      // TODO: Naviguer vers Parent Profile
-                    },
-                  ),
-
-                  // Child Profile
-                  _buildProfileOption(
-                    icon: Icons.child_care_outlined,
-                    title: 'Child Profile',
-                    subtitle: user?.childName ?? 'No child profile',
-                    onTap: () {
-                      // TODO: Naviguer vers Child Profile
-                    },
-                  ),
-
-                  // Favorite
-                  _buildProfileOption(
-                    icon: Icons.favorite_border,
-                    title: 'Favorite',
-                    subtitle: 'Your saved items',
-                    onTap: () {
-                      // TODO: Naviguer vers Favorite
-                    },
-                  ),
-
-                  // Privacy Policy
-                  _buildProfileOption(
-                    icon: Icons.privacy_tip_outlined,
-                    title: 'Privacy Policy',
-                    subtitle: 'Read our privacy terms',
-                    onTap: () {
-                      // TODO: Ouvrir Privacy Policy
-                    },
-                  ),
-
-                  // Settings
-                  _buildProfileOption(
-                    icon: Icons.settings_outlined,
-                    title: 'Settings',
-                    subtitle: 'App preferences & notifications',
-                    onTap: () {
-                      // TODO: Naviguer vers Settings
-                    },
-                  ),
-
-                  // Help
-                  _buildProfileOption(
-                    icon: Icons.help_outline,
-                    title: 'Help',
-                    subtitle: 'FAQ & Contact support',
-                    onTap: () {
-                      // TODO: Naviguer vers Help
-                    },
-                  ),
-
-                  // Logout - en rouge
-                  Material(
-                    color: Colors.white,
-                    child: InkWell(
+              child: Container(
+                color: Colors.white,
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  physics: const BouncingScrollPhysics(),
+                  children: [
+                    // Parent Profile
+                    _buildProfileOption(
+                      icon: Icons.person_outline,
+                      title: 'Parent Profile',
+                      subtitle: 'Manage parent information',
+                      iconColor: const Color(0xFF0066FF),
                       onTap: () {
-                        Provider.of<AuthProvider>(
+                        Navigator.push(
                           context,
-                          listen: false,
-                        ).signOut();
-                        Navigator.pushReplacementNamed(context, '/welcome');
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 20,
-                        ),
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            top: BorderSide(color: Color(0xFFF0F0F0), width: 1),
+                          MaterialPageRoute(
+                            builder: (context) => const ParentProfileScreen(),
                           ),
+                        );
+                      },
+                    ),
+
+                    // Child Profile
+                    _buildProfileOption(
+                      icon: Icons.child_care_outlined,
+                      title: 'Child Profile',
+                      subtitle: user?.childName ?? 'No child profile',
+                      iconColor: const Color(0xFF0066FF),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ChildProfileScreen(),
+                          ),
+                        );
+                      },
+                    ),
+
+                    // Favorite
+                    _buildProfileOption(
+                      icon: Icons.favorite_border,
+                      title: 'Favorite',
+                      subtitle: 'Your saved items',
+                      iconColor: const Color(0xFF0066FF),
+                      onTap: () {
+                        // TODO: Naviguer vers Favorite
+                      },
+                    ),
+
+                    // Privacy Policy
+                    _buildProfileOption(
+                      icon: Icons.privacy_tip_outlined,
+                      title: 'Privacy Policy',
+                      subtitle: 'Read our privacy terms',
+                      iconColor: const Color(0xFF0066FF),
+                      onTap: () {
+                        // TODO: Ouvrir Privacy Policy
+                      },
+                    ),
+
+                    // Settings
+                    _buildProfileOption(
+                      icon: Icons.settings_outlined,
+                      title: 'Settings',
+                      subtitle: 'App preferences & notifications',
+                      iconColor: const Color(0xFF0066FF),
+                      onTap: () {
+                        // TODO: Naviguer vers Settings
+                      },
+                    ),
+
+                    // Help
+                    _buildProfileOption(
+                      icon: Icons.help_outline,
+                      title: 'Help',
+                      subtitle: 'FAQ & Contact support',
+                      iconColor: const Color(0xFF0066FF),
+                      onTap: () {
+                        // TODO: Naviguer vers Help
+                      },
+                    ),
+
+                    // Logout Button
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFFF0F0F0),
+                          width: 1.5,
                         ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.red.withOpacity(0.1),
-                              ),
-                              child: Icon(
-                                Icons.logout,
-                                color: Colors.red[600],
-                                size: 22,
-                              ),
+                      ),
+                      child: Material(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        child: InkWell(
+                          onTap: () {
+                            Provider.of<AuthProvider>(
+                              context,
+                              listen: false,
+                            ).signOut();
+                            Navigator.pushReplacementNamed(context, '/welcome');
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 18,
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Logout',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.red[600],
-                                    ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Color(0xFF0066FF).withOpacity(0.1),
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Sign out from your account',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.red.withOpacity(0.7),
-                                      fontWeight: FontWeight.w400,
-                                    ),
+                                  child: Icon(
+                                    Icons.logout,
+                                    color: Color(0xFF0066FF),
+                                    size: 22,
                                   ),
-                                ],
-                              ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Logout',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          color: Color(0xFF0066FF),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Sign out from your account',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Color(
+                                            0xFF0066FF,
+                                          ).withOpacity(0.7),
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+
+                    const SizedBox(height: 32),
+                  ],
+                ),
               ),
             ),
           ],
@@ -303,33 +300,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required IconData icon,
     required String title,
     required String subtitle,
-    bool isFirst = false,
+    required Color iconColor,
     required VoidCallback onTap,
   }) {
     return Material(
       color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-          decoration: BoxDecoration(
-            border: Border(
-              top: isFirst
-                  ? BorderSide.none
-                  : const BorderSide(color: Color(0xFFF0F0F0), width: 1),
-            ),
-          ),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Row(
             children: [
-              // Icon avec background gris clair
+              // Icon avec background coloré
               Container(
-                width: 40,
-                height: 40,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.grey[100],
+                  color: iconColor.withOpacity(0.1),
                 ),
-                child: Icon(icon, color: Colors.grey[800], size: 22),
+                child: Icon(icon, color: iconColor, size: 24),
               ),
               const SizedBox(width: 16),
               // Texte
@@ -345,7 +337,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         color: Colors.black,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
                     Text(
                       subtitle,
                       style: TextStyle(
@@ -357,6 +349,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
               ),
+              const SizedBox(width: 12),
               // Chevron
               Icon(Icons.chevron_right, color: Colors.grey[400], size: 24),
             ],
