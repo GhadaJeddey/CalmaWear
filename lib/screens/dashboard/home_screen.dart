@@ -1,5 +1,6 @@
 // screens/dashboard/home_screen.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/monitoring_provider.dart';
@@ -12,6 +13,7 @@ import '../community/community_screen.dart';
 import '../profile/profile_screen.dart';
 import './notifications_screen.dart';
 import 'dart:math' as math;
+import '../../router/routes.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -70,37 +72,19 @@ class _HomeScreenState extends State<HomeScreen>
     if (index == _currentBottomNavIndex) return;
 
     switch (index) {
-      case 0: // Home
+      case 0: // Home (current screen)
         break;
       case 1: // Planner
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const PlannerScreen()),
-          (route) => false,
-        );
+        context.go(Routes.planner);
         break;
       case 2: // Community
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const CommunityScreen()),
-          (route) => false,
-        );
-        break;
+        context.go(Routes.community);
+
       case 3: // Chat
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const ChatScreen(fromScreen: 'home'),
-          ),
-          (route) => false,
-        );
+        context.go(Routes.chat);
         break;
       case 4: // Profile
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const ProfileScreen()),
-          (route) => false,
-        );
+        context.go(Routes.profile);
         break;
     }
   }
@@ -217,12 +201,7 @@ class _HomeScreenState extends State<HomeScreen>
               icon: const Icon(Icons.notifications_outlined),
               color: const Color(0xFF0066FF),
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const NotificationsScreen(),
-                  ),
-                );
+                context.pushNamed('notifications');
               },
             ),
           ),
