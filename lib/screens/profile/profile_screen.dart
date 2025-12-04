@@ -18,19 +18,34 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  int _currentBottomNavIndex = 4;
+  int _currentBottomNavIndex = 4; // Profile is at index 4
 
   void _onBottomNavTapped(int index) {
     if (index == _currentBottomNavIndex) return;
 
     switch (index) {
-      case 0: // Accueil
-        Navigator.push(
+      case 0: // Home
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const HomeScreen()),
+          (route) => false,
         );
         break;
-      case 1: // Chat
+      case 1: // Planner
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const PlannerScreen()),
+          (route) => false,
+        );
+        break;
+      case 2: // Community
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const CommunityScreen()),
+          (route) => false,
+        );
+        break;
+      case 3: // Chat
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
@@ -39,19 +54,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           (route) => false,
         );
         break;
-      case 2: // Planner
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const PlannerScreen()),
-        );
-        break;
-      case 3: // Communauté
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const CommunityScreen()),
-        );
-        break;
-      case 4: // Profil (déjà sur ProfileScreen)
+      case 4: // Profile (current screen)
         break;
     }
   }
