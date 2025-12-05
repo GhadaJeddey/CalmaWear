@@ -13,6 +13,7 @@ class Routes {
   static const welcome = '/welcome';
   static const login = '/login';
   static const signup = '/signup';
+  static const childProfileSetup = '/child-profile-setup'; // After signup
 
   // Other
   static const notifications = '/notifications';

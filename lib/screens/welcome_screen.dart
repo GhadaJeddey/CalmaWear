@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../utils/constants.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -88,7 +89,7 @@ class WelcomeScreen extends StatelessWidget {
           height: 50,
           child: ElevatedButton(
             onPressed: () {
-              Navigator.pushNamed(context, '/login');
+              context.go('/login');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF0066FF),
@@ -111,13 +112,12 @@ class WelcomeScreen extends StatelessWidget {
 
         const SizedBox(height: 16),
 
-        // Sign Up button (outlined with light fill)
         SizedBox(
           width: 250,
           height: 50,
           child: ElevatedButton(
             onPressed: () {
-              Navigator.pushNamed(context, '/signup');
+              context.go('/signup');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFCAD6FF),

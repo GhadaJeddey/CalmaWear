@@ -1,10 +1,11 @@
 // screens/profile/parent_profile_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, Uint8List;
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/cloudinary_service.dart';
 
 class ParentProfileScreen extends StatefulWidget {
   const ParentProfileScreen({Key? key}) : super(key: key);
@@ -16,29 +17,52 @@ class ParentProfileScreen extends StatefulWidget {
 class _ParentProfileScreenState extends State<ParentProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final ImagePicker _imagePicker = ImagePicker();
+  final CloudinaryService _cloudinaryService = CloudinaryService();
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
   late TextEditingController _emailController;
   late TextEditingController _dobController;
   DateTime? _selectedDate;
-  File? _selectedImage;
+  XFile? _selectedImage;
+  Uint8List? _selectedImageBytes; // For web compatibility
+  String? _uploadedImageUrl;
   bool _isLoading = false;
+  bool _isUploadingImage = false;
 
   @override
   void initState() {
     super.initState();
-    final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
-
-    _nameController = TextEditingController(text: user?.name ?? '');
-    _phoneController = TextEditingController(text: user?.phoneNumber ?? '');
-    _emailController = TextEditingController(text: user?.email ?? '');
+    // Initialize controllers first
+    _nameController = TextEditingController();
+    _phoneController = TextEditingController();
+    _emailController = TextEditingController();
     _dobController = TextEditingController();
+    // Then load user data
+    _loadUserData();
+  }
 
-    // Si vous avez une date de naissance dans votre modèle User, initialisez-la ici
-    // _selectedDate = user?.dateOfBirth;
-    // if (_selectedDate != null) {
-    //   _dobController.text = DateFormat('dd/MM/yyyy').format(_selectedDate!);
-    // }
+  Future<void> _loadUserData() async {
+    // Refresh user data from Firestore
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    await authProvider.refreshUser();
+
+    final user = authProvider.currentUser;
+    if (user != null) {
+      _nameController.text = user.name;
+      _phoneController.text = user.phoneNumber ?? '';
+      _emailController.text = user.email;
+
+      // Load existing date of birth
+      if (user.dateOfBirth != null) {
+        _selectedDate = user.dateOfBirth;
+        _dobController.text = DateFormat('dd/MM/yyyy').format(_selectedDate!);
+      }
+
+      // Load existing profile image URL
+      _uploadedImageUrl = user.profileImageUrl;
+
+      setState(() {}); // Refresh UI
+    }
   }
 
   @override
@@ -59,8 +83,10 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
     );
 
     if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
       setState(() {
-        _selectedImage = File(pickedFile.path);
+        _selectedImage = pickedFile;
+        _selectedImageBytes = bytes;
       });
     }
   }
@@ -74,8 +100,10 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
     );
 
     if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
       setState(() {
-        _selectedImage = File(pickedFile.path);
+        _selectedImage = pickedFile;
+        _selectedImageBytes = bytes;
       });
     }
   }
@@ -158,31 +186,64 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
       setState(() => _isLoading = true);
 
       try {
-        // TODO: Mettre à jour le profil parent avec l'image
-        // Exemple avec AuthProvider
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        final user = authProvider.currentUser;
 
-        // await authProvider.updateParentProfile(
-        //   name: _nameController.text,
-        //   phone: _phoneController.text,
-        //   email: _emailController.text,
-        //   dateOfBirth: _selectedDate,
-        //   image: _selectedImage,
-        // );
+        if (user != null) {
+          // Upload image to Cloudinary if selected
+          String? profileImageUrl = _uploadedImageUrl;
+          if (_selectedImage != null && _uploadedImageUrl == null) {
+            setState(() => _isUploadingImage = true);
+            profileImageUrl = await _cloudinaryService.uploadParentProfileImage(
+              _selectedImage!,
+              user.id,
+            );
+            setState(() => _isUploadingImage = false);
 
-        await Future.delayed(const Duration(seconds: 1)); // Simulation
+            if (profileImageUrl == null && mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Failed to upload image, but profile will be saved',
+                  ),
+                  backgroundColor: Colors.orange,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          }
 
-        if (!mounted) return;
+          final updatedUser = user.copyWith(
+            name: _nameController.text.trim(),
+            phoneNumber: _phoneController.text.trim(),
+            dateOfBirth: _selectedDate,
+            profileImageUrl: profileImageUrl ?? user.profileImageUrl,
+          );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Profile updated successfully'),
-            backgroundColor: Colors.green[600],
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+          // Save to Firestore
+          final success = await authProvider.updateUserProfile(updatedUser);
 
-        Navigator.pop(context);
+          if (!mounted) return;
+
+          if (success) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Profile updated successfully'),
+                backgroundColor: Colors.green[600],
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+            Navigator.pop(context);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to save: ${authProvider.error}'),
+                backgroundColor: Colors.red[600],
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
       } catch (e) {
         if (!mounted) return;
 
@@ -254,7 +315,9 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
                             height: 120,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              gradient: _selectedImage == null
+                              gradient:
+                                  (_selectedImage == null &&
+                                      _uploadedImageUrl == null)
                                   ? const LinearGradient(
                                       colors: [
                                         Color(0xFF0066FF),
@@ -264,15 +327,24 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
                                       end: Alignment.bottomRight,
                                     )
                                   : null,
-                              color: _selectedImage != null
+                              color:
+                                  (_selectedImage != null ||
+                                      _uploadedImageUrl != null)
                                   ? Colors.transparent
                                   : null,
-                              image: _selectedImage != null
+                              image: _selectedImageBytes != null
                                   ? DecorationImage(
-                                      image: FileImage(_selectedImage!),
+                                      image: MemoryImage(_selectedImageBytes!),
                                       fit: BoxFit.cover,
                                     )
-                                  : null,
+                                  : (_uploadedImageUrl != null
+                                        ? DecorationImage(
+                                            image: NetworkImage(
+                                              _uploadedImageUrl!,
+                                            ),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : null),
                               boxShadow: [
                                 BoxShadow(
                                   color: const Color(
@@ -283,7 +355,9 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
                                 ),
                               ],
                             ),
-                            child: _selectedImage == null
+                            child:
+                                (_selectedImage == null &&
+                                    _uploadedImageUrl == null)
                                 ? const Icon(
                                     Icons.person,
                                     size: 50,

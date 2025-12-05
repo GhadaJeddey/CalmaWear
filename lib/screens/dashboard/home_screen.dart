@@ -27,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen>
   int _currentBottomNavIndex = 0;
   bool _isInitializing = true;
   late AnimationController _pulseController;
+  bool _showCrisisPopup = false;
 
   @override
   void initState() {
@@ -60,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen>
         listen: false,
       );
       monitoringProvider.initializeMonitoring();
-      monitoringProvider.toggleMonitoring(); // Start monitoring
+      monitoringProvider.toggleMonitoring();
     }
 
     if (mounted) {
@@ -72,18 +73,17 @@ class _HomeScreenState extends State<HomeScreen>
     if (index == _currentBottomNavIndex) return;
 
     switch (index) {
-      case 0: // Home (current screen)
+      case 0:
         break;
-      case 1: // Planner
+      case 1:
         context.go(Routes.planner);
         break;
-      case 2: // Community
+      case 2:
         context.go(Routes.community);
-
-      case 3: // Chat
+      case 3:
         context.go(Routes.chat);
         break;
-      case 4: // Profile
+      case 4:
         context.go(Routes.profile);
         break;
     }
@@ -97,42 +97,48 @@ class _HomeScreenState extends State<HomeScreen>
 
     final user = Provider.of<AuthProvider>(context).currentUser;
     final monitoringProvider = Provider.of<MonitoringProvider>(context);
+    final stressScore =
+        monitoringProvider.currentSensorData?.stressScore ?? 0.0;
+
+    // Show crisis popup if stress is above threshold
+    if (stressScore > 70 && !_showCrisisPopup) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() => _showCrisisPopup = true);
+      });
+    }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // Header
-            _buildHeader(user?.name ?? 'User'),
-
-            // Main Content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 20),
-
-                    // Current Status Card
-                    _buildCurrentStatusCard(monitoringProvider),
-
-                    const SizedBox(height: 20),
-
-                    // Last Detected Trigger
-                    _buildLastTriggerCard(monitoringProvider),
-
-                    const SizedBox(height: 20),
-
-                    // Vital Signs
-                    _buildVitalSignsCards(monitoringProvider),
-
-                    const SizedBox(height: 100),
-                  ],
+            Column(
+              children: [
+                _buildHeader(user?.name ?? 'User'),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 20),
+                        _buildCurrentStatusCard(monitoringProvider),
+                        const SizedBox(height: 20),
+                        _buildLastTriggerCard(monitoringProvider),
+                        const SizedBox(height: 20),
+                        _buildVitalSignsSection(monitoringProvider),
+                        const SizedBox(height: 20),
+                        _buildCrisisHistoryChart(monitoringProvider),
+                        const SizedBox(height: 20),
+                        _buildConnectedDevices(),
+                        const SizedBox(height: 100),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
+            if (_showCrisisPopup) _buildCrisisPopup(monitoringProvider),
           ],
         ),
       ),
@@ -146,9 +152,18 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildHeader(String userName) {
     return Container(
       padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Row(
         children: [
-          // User Avatar
           Container(
             width: 50,
             height: 50,
@@ -167,10 +182,7 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
           ),
-
           const SizedBox(width: 12),
-
-          // Greeting
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -190,8 +202,6 @@ class _HomeScreenState extends State<HomeScreen>
               ],
             ),
           ),
-
-          // Notification Bell
           Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -205,21 +215,17 @@ class _HomeScreenState extends State<HomeScreen>
               },
             ),
           ),
-
           const SizedBox(width: 8),
-
-          // Logout Button
           Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: const Color(0xFFF0F4FF),
             ),
             child: IconButton(
-              icon: const Icon(Icons.logout),
+              icon: const Icon(Icons.settings_outlined),
               color: const Color(0xFF0066FF),
               onPressed: () {
-                Provider.of<AuthProvider>(context, listen: false).signOut();
-                Navigator.pushReplacementNamed(context, '/welcome');
+                // Settings action
               },
             ),
           ),
@@ -268,13 +274,13 @@ class _HomeScreenState extends State<HomeScreen>
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: const Color(0xFF10B981).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(
+                child: const Text(
                   'Live',
                   style: TextStyle(
-                    color: statusColor,
+                    color: Color(0xFF10B981),
                     fontWeight: FontWeight.w700,
                     fontSize: 12,
                   ),
@@ -282,10 +288,7 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ],
           ),
-
           const SizedBox(height: 30),
-
-          // Concentric Circles with Percentage
           Center(
             child: AnimatedBuilder(
               animation: _pulseController,
@@ -293,7 +296,7 @@ class _HomeScreenState extends State<HomeScreen>
                 return CustomPaint(
                   size: const Size(200, 200),
                   painter: ConcentricCirclesPainter(
-                    percentage: stressScore / 100,
+                    percentage: (100 - stressScore) / 100,
                     animationValue: _pulseController.value,
                     color: statusColor,
                   ),
@@ -315,9 +318,7 @@ class _HomeScreenState extends State<HomeScreen>
               },
             ),
           ),
-
           const SizedBox(height: 20),
-
           Center(
             child: Text(
               statusText,
@@ -400,7 +401,7 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _buildVitalSignsCards(MonitoringProvider provider) {
+  Widget _buildVitalSignsSection(MonitoringProvider provider) {
     final sensorData = provider.currentSensorData;
 
     return Column(
@@ -408,7 +409,8 @@ class _HomeScreenState extends State<HomeScreen>
         _buildVitalSignCard(
           icon: Icons.favorite,
           label: 'Heart Rate',
-          value: '${sensorData?.heartRate.round() ?? 0} Bpm',
+          value: '${sensorData?.heartRate.round() ?? 0}',
+          unit: 'Bpm',
           subValue: 'Avg: 94ms',
           status: _getHeartRateStatus(sensorData?.heartRate ?? 0),
           color: _getHeartRateColor(sensorData?.heartRate ?? 0),
@@ -417,7 +419,8 @@ class _HomeScreenState extends State<HomeScreen>
         _buildVitalSignCard(
           icon: Icons.air,
           label: 'Breathing',
-          value: '${sensorData?.breathingRate.round() ?? 0} Rpm',
+          value: '${sensorData?.breathingRate.round() ?? 0}',
+          unit: 'Rpm',
           subValue: 'Respiratory rate',
           status: _getBreathingStatus(sensorData?.breathingRate ?? 0),
           color: _getBreathingColor(sensorData?.breathingRate ?? 0),
@@ -427,9 +430,20 @@ class _HomeScreenState extends State<HomeScreen>
           icon: Icons.directions_walk,
           label: 'Movement',
           value: _getMovementLevel(sensorData?.motion ?? 0),
+          unit: '',
           subValue: '${sensorData?.motion.round() ?? 0}% activity',
           status: _getMovementStatus(sensorData?.motion ?? 0),
           color: _getMovementColor(sensorData?.motion ?? 0),
+        ),
+        const SizedBox(height: 12),
+        _buildVitalSignCard(
+          icon: Icons.volume_up,
+          label: 'Noise',
+          value: '${sensorData?.noiseLevel.round() ?? 0}',
+          unit: 'dB',
+          subValue: 'Environment sound',
+          status: _getNoiseStatus(sensorData?.noiseLevel ?? 0),
+          color: _getNoiseColor(sensorData?.noiseLevel ?? 0),
         ),
       ],
     );
@@ -439,6 +453,7 @@ class _HomeScreenState extends State<HomeScreen>
     required IconData icon,
     required String label,
     required String value,
+    required String unit,
     required String subValue,
     required String status,
     required Color color,
@@ -481,13 +496,30 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A1A),
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      value,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1A1A1A),
+                      ),
+                    ),
+                    if (unit.isNotEmpty) ...[
+                      const SizedBox(width: 4),
+                      Text(
+                        unit,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 Text(
                   subValue,
@@ -512,6 +544,248 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCrisisHistoryChart(MonitoringProvider provider) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Crisis history',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1A1A1A),
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 200,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _buildBarChart('Su', 0.3, const Color(0xFFE3F2FD)),
+                _buildBarChart('Mo', 0.5, const Color(0xFFBBDEFB)),
+                _buildBarChart('Tu', 0.7, const Color(0xFF90CAF9)),
+                _buildBarChart('We', 0.6, const Color(0xFF64B5F6)),
+                _buildBarChart('Th', 0.8, const Color(0xFF42A5F5)),
+                _buildBarChart('Fr', 1.0, const Color(0xFF0066FF)),
+                _buildBarChart('Sa', 0.0, const Color(0xFFE3F2FD)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBarChart(String day, double value, Color color) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Container(
+          width: 32,
+          height: 160 * value,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          day,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildConnectedDevices() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0066FF).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(Icons.watch, color: Color(0xFF0066FF), size: 32),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'CalmaWear Vest',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Device • 10 minutes ago',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFF10B981).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Text(
+              'Connected',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF10B981),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCrisisPopup(MonitoringProvider provider) {
+    return Container(
+      color: Colors.black.withOpacity(0.5),
+      child: Center(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 40),
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(32),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'You are just a click away!',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A1A1A),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Click SOS button to play the relaxation sounds',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [Colors.red.shade400, Colors.red.shade600],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.red.withOpacity(0.3),
+                      blurRadius: 30,
+                      spreadRadius: 10,
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Text(
+                    'CRISIS',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Play relaxation sounds
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Playing relaxation sounds...'),
+                        backgroundColor: Color(0xFF0066FF),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0066FF),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Text(
+                    'SOS Button',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () {
+                  setState(() => _showCrisisPopup = false);
+                },
+                child: const Text(
+                  'Close',
+                  style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -572,6 +846,18 @@ class _HomeScreenState extends State<HomeScreen>
     return const Color(0xFF10B981);
   }
 
+  String _getNoiseStatus(double noise) {
+    if (noise > 80) return 'Loud';
+    if (noise > 60) return 'Moderate';
+    return 'Quiet';
+  }
+
+  Color _getNoiseColor(double noise) {
+    if (noise > 80) return const Color(0xFFEF4444);
+    if (noise > 60) return const Color(0xFFF59E0B);
+    return const Color(0xFF10B981);
+  }
+
   String _getTimeAgo(DateTime timestamp) {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
@@ -604,7 +890,6 @@ class ConcentricCirclesPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final maxRadius = size.width / 2;
 
-    // Draw 5 concentric circles with animation
     for (int i = 5; i >= 1; i--) {
       final radius = maxRadius * (i / 5.0) * (0.9 + animationValue * 0.1);
       final opacity = (1.0 - (i - 1) / 5.0) * 0.15;
@@ -617,7 +902,6 @@ class ConcentricCirclesPainter extends CustomPainter {
       canvas.drawCircle(center, radius, paint);
     }
 
-    // Draw filled center circle
     final centerPaint = Paint()
       ..color = color.withOpacity(0.05)
       ..style = PaintingStyle.fill;

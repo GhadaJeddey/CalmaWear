@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/constants.dart';
+import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -41,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (success) {
         if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
+          context.go('/home');
         }
       }
     }
@@ -120,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     Icons.arrow_back,
                                     color: Color(0xFF0066FF),
                                   ),
-                                  onPressed: () => Navigator.pop(context),
+                                  onPressed: () => context.go('/welcome'),
                                 ),
                               ),
 
@@ -339,7 +340,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   TextButton(
                                     onPressed: () {
-                                      Navigator.pushNamed(context, '/signup');
+                                      context.go('/signup');
                                     },
                                     child: const Text(
                                       'Create Account',

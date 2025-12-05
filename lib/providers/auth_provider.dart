@@ -129,4 +129,35 @@ class AuthProvider with ChangeNotifier {
     _error = null;
     notifyListeners();
   }
+
+  // Mettre à jour le profil utilisateur
+  Future<bool> updateUserProfile(app_models.User updatedUser) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _authService.updateUserProfile(updatedUser);
+      _currentUser = updatedUser;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Rafraîchir les données utilisateur depuis Firestore
+  Future<void> refreshUser() async {
+    try {
+      _currentUser = await _authService.getCurrentUser();
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
 }

@@ -71,6 +71,7 @@ class CommunityService {
     required String title,
     required String content,
     required String authorName,
+    String? authorProfileImageUrl,
   }) async {
     if (!isUserLoggedIn) {
       print('User not logged in');
@@ -85,6 +86,7 @@ class CommunityService {
         'content': content,
         'authorId': currentUserId!,
         'authorName': authorName,
+        'authorProfileImageUrl': authorProfileImageUrl,
         'createdAt': FieldValue.serverTimestamp(),
         'likes': 0,
         'readTime': readTime,
@@ -252,6 +254,7 @@ class CommunityService {
     required DateTime date,
     required String time,
     required String type,
+    String? imageUrl,
   }) async {
     if (!isUserLoggedIn) return null;
 
@@ -262,6 +265,7 @@ class CommunityService {
         'date': Timestamp.fromDate(date),
         'time': time,
         'type': type,
+        'imageUrl': imageUrl,
         'registeredCount': 0,
         'registeredUsers': [],
         'createdAt': FieldValue.serverTimestamp(),

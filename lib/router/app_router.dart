@@ -24,7 +24,6 @@ final _plannerNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'planner');
 final _communityNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'community',
 );
-final _chatNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'chat');
 final _profileNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'profile');
 
 final goRouter = GoRouter(
@@ -53,11 +52,32 @@ final goRouter = GoRouter(
       builder: (context, state) => const SignupScreen(),
     ),
 
+    // Child profile setup after signup (outside shell)
+    GoRoute(
+      path: Routes.childProfileSetup,
+      name: 'child-profile-setup',
+      builder: (context, state) => const ChildProfileScreen(isSetupMode: true),
+    ),
+
     // Test route (outside shell)
     GoRoute(
       path: Routes.testMonitoring,
       name: 'test-monitoring',
       builder: (context, state) => const MonitoringTestScreen(),
+    ),
+
+    // Chat route (outside shell - no bottom nav)
+    GoRoute(
+      path: Routes.chat,
+      name: 'chat',
+      builder: (context, state) => const ChatScreen(),
+      routes: [
+        GoRoute(
+          path: 'history',
+          name: 'chat-history',
+          builder: (context, state) => const ConversationHistoryScreen(),
+        ),
+      ],
     ),
 
     // Main app shell with bottom navigation
@@ -110,27 +130,7 @@ final goRouter = GoRouter(
           ],
         ),
 
-        // BRANCH 3: CHAT
-        StatefulShellBranch(
-          navigatorKey: _chatNavigatorKey,
-          routes: [
-            GoRoute(
-              path: Routes.chat,
-              name: 'chat',
-              builder: (context, state) => const ChatScreen(),
-              routes: [
-                GoRoute(
-                  path: 'history',
-                  name: 'chat-history',
-                  builder: (context, state) =>
-                      const ConversationHistoryScreen(),
-                ),
-              ],
-            ),
-          ],
-        ),
-
-        // BRANCH 4: PROFILE
+        // BRANCH 3: PROFILE
         StatefulShellBranch(
           navigatorKey: _profileNavigatorKey,
           routes: [

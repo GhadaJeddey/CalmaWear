@@ -1,5 +1,6 @@
 // screens/community/story_detail_screen.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../models/community_story.dart';
 import '../../providers/community_provider.dart';
@@ -23,7 +24,7 @@ class StoryDetailScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF1A1A1A)),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
         title: const Text(
           'Story',
@@ -60,20 +61,30 @@ class StoryDetailScreen extends StatelessWidget {
                   height: 48,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF0066FF), Color(0xFF0080FF)],
-                    ),
+                    gradient: story.authorProfileImageUrl == null
+                        ? const LinearGradient(
+                            colors: [Color(0xFF0066FF), Color(0xFF0080FF)],
+                          )
+                        : null,
+                    image: story.authorProfileImageUrl != null
+                        ? DecorationImage(
+                            image: NetworkImage(story.authorProfileImageUrl!),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
                   ),
-                  child: Center(
-                    child: Text(
-                      story.authorName[0].toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+                  child: story.authorProfileImageUrl == null
+                      ? Center(
+                          child: Text(
+                            story.authorName[0].toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
