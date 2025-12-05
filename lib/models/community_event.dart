@@ -10,6 +10,7 @@ class CommunityEvent {
   final String type; // e.g., "AMA With Dr. Jennifer Smith"
   final int registeredCount;
   final List<String> registeredUsers; // List of user IDs
+  final String? imageUrl; // Cloudinary image URL
 
   CommunityEvent({
     required this.id,
@@ -20,6 +21,7 @@ class CommunityEvent {
     required this.type,
     required this.registeredCount,
     required this.registeredUsers,
+    this.imageUrl,
   });
 
   String get dateFormatted {
@@ -50,6 +52,7 @@ class CommunityEvent {
       type: data['type'] ?? '',
       registeredCount: data['registeredCount'] ?? 0,
       registeredUsers: List<String>.from(data['registeredUsers'] ?? []),
+      imageUrl: data['imageUrl'],
     );
   }
 
@@ -62,6 +65,7 @@ class CommunityEvent {
       'type': type,
       'registeredCount': registeredCount,
       'registeredUsers': registeredUsers,
+      'imageUrl': imageUrl,
     };
   }
 
@@ -74,6 +78,7 @@ class CommunityEvent {
     String? type,
     int? registeredCount,
     List<String>? registeredUsers,
+    String? imageUrl,
   }) {
     return CommunityEvent(
       id: id ?? this.id,
@@ -84,6 +89,7 @@ class CommunityEvent {
       type: type ?? this.type,
       registeredCount: registeredCount ?? this.registeredCount,
       registeredUsers: registeredUsers ?? this.registeredUsers,
+      imageUrl: imageUrl ?? this.imageUrl,
     );
   }
 }

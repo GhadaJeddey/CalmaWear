@@ -16,3 +16,4 @@ users/{userId}/
       ├── 2024_week_3: {weekStats}
       └── ...
 
+  CLOUDINARY_URL=cloudinary://547371798173645:3OdmnWBbZNu5o0dr1v4qVX9H6Gg@dddramjte 

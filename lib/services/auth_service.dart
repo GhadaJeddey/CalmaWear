@@ -112,7 +112,7 @@ class AuthService {
     return prefs.getBool('isLoggedIn') ?? false;
   }
 
-  // Récupérer l'utilisateur actuel
+  // Récupérer l'utilisateur actuel avec TOUTES les données Firestore
   Future<app_models.User?> getCurrentUser() async {
     final user = _auth.currentUser;
     if (user != null) {
@@ -120,18 +120,92 @@ class AuthService {
       final userDoc = await _firestore.collection('users').doc(user.uid).get();
       if (userDoc.exists) {
         final data = userDoc.data()!;
+
+        // Parse dates correctly (handle both Timestamp and String)
+        DateTime? parseDate(dynamic value) {
+          if (value == null) return null;
+          if (value is Timestamp) return value.toDate();
+          if (value is String) return DateTime.tryParse(value);
+          return null;
+        }
+
+        // Parse child triggers
+        List<app_models.ChildTrigger>? parseTriggers(dynamic value) {
+          if (value == null) return null;
+          if (value is List) {
+            return value
+                .map(
+                  (t) => app_models.ChildTrigger.fromMap(
+                    t as Map<String, dynamic>,
+                  ),
+                )
+                .toList();
+          }
+          return null;
+        }
+
         return app_models.User(
-          id: data['id'],
-          email: data['email'],
-          name: data['name'],
+          id: data['id'] ?? user.uid,
+          email: data['email'] ?? user.email ?? '',
+          name: data['name'] ?? user.displayName ?? 'User',
+          phoneNumber: data['phoneNumber'],
+          dateOfBirth: parseDate(data['dateOfBirth']),
+          profileImageUrl: data['profileImageUrl'],
           childName: data['childName'],
-          createdAt: (data['createdAt'] as Timestamp).toDate(),
+          childDateOfBirth: parseDate(data['childDateOfBirth']),
+          childGender: data['childGender'],
+          childAge: data['childAge'],
+          childProfileImageUrl: data['childProfileImageUrl'],
+          childTriggers: parseTriggers(data['childTriggers']),
+          createdAt: parseDate(data['createdAt']) ?? DateTime.now(),
           stressThreshold: data['stressThreshold']?.toDouble() ?? 70.0,
           notificationsEnabled: data['notificationsEnabled'] ?? true,
         );
       }
     }
     return _userFromFirebase(user);
+  }
+
+  // Mettre à jour le profil utilisateur dans Firestore
+  Future<void> updateUserProfile(app_models.User updatedUser) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('No authenticated user');
+
+      // Prepare data for Firestore (convert dates to ISO strings)
+      final Map<String, dynamic> data = {
+        'id': updatedUser.id,
+        'email': updatedUser.email,
+        'name': updatedUser.name,
+        'phoneNumber': updatedUser.phoneNumber,
+        'dateOfBirth': updatedUser.dateOfBirth?.toIso8601String(),
+        'profileImageUrl': updatedUser.profileImageUrl,
+        'childName': updatedUser.childName,
+        'childDateOfBirth': updatedUser.childDateOfBirth?.toIso8601String(),
+        'childGender': updatedUser.childGender,
+        'childAge': updatedUser.childAge,
+        'childProfileImageUrl': updatedUser.childProfileImageUrl,
+        'childTriggers': updatedUser.childTriggers
+            .map((t) => t.toMap())
+            .toList(),
+        'stressThreshold': updatedUser.stressThreshold,
+        'notificationsEnabled': updatedUser.notificationsEnabled,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      // Update Firestore document
+      await _firestore.collection('users').doc(user.uid).update(data);
+
+      // Also update Firebase Auth display name if changed
+      if (user.displayName != updatedUser.name) {
+        await user.updateDisplayName(updatedUser.name);
+      }
+
+      print('✅ User profile updated in Firestore');
+    } catch (e) {
+      print('❌ Error updating user profile: $e');
+      rethrow;
+    }
   }
 
   // Réinitialiser le mot de passe

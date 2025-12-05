@@ -1,11 +1,8 @@
 // screens/profile/profile_screen.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../dashboard/home_screen.dart';
-import '../chat/chat_screen.dart';
-import '../planner/planner_screen.dart';
-import '../community/community_screen.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import './parent_profile.dart';
 import './child_profile.dart';
@@ -18,43 +15,22 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  int _currentBottomNavIndex = 4; // Profile is at index 4
+  int _currentBottomNavIndex = 3; // Profile is at index 3
 
   void _onBottomNavTapped(int index) {
     if (index == _currentBottomNavIndex) return;
 
     switch (index) {
       case 0: // Home
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-          (route) => false,
-        );
+        context.go('/home');
         break;
       case 1: // Planner
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const PlannerScreen()),
-          (route) => false,
-        );
+        context.go('/planner');
         break;
       case 2: // Community
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const CommunityScreen()),
-          (route) => false,
-        );
+        context.go('/community');
         break;
-      case 3: // Chat
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const ChatScreen(fromScreen: 'profile'),
-          ),
-          (route) => false,
-        );
-        break;
-      case 4: // Profile (current screen)
+      case 3: // Profile (current screen)
         break;
     }
   }
@@ -89,11 +65,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     height: 100,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF0066FF), Color(0xFF0080FF)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      gradient: user?.profileImageUrl == null
+                          ? const LinearGradient(
+                              colors: [Color(0xFF0066FF), Color(0xFF0080FF)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            )
+                          : null,
+                      image: user?.profileImageUrl != null
+                          ? DecorationImage(
+                              image: NetworkImage(user!.profileImageUrl!),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
                       boxShadow: [
                         BoxShadow(
                           color: const Color(0xFF0066FF).withOpacity(0.2),
@@ -102,11 +86,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.person,
-                      size: 50,
-                      color: Colors.white,
-                    ),
+                    child: user?.profileImageUrl == null
+                        ? const Icon(
+                            Icons.person,
+                            size: 50,
+                            color: Colors.white,
+                          )
+                        : null,
                   ),
                   const SizedBox(height: 20),
 
@@ -138,12 +124,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       subtitle: 'Manage parent information',
                       iconColor: const Color(0xFF0066FF),
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ParentProfileScreen(),
-                          ),
-                        );
+                        context.push('/profile/parent');
                       },
                     ),
 
@@ -154,12 +135,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       subtitle: user?.childName ?? 'No child profile',
                       iconColor: const Color(0xFF0066FF),
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ChildProfileScreen(),
-                          ),
-                        );
+                        context.push('/profile/child');
                       },
                     ),
 
@@ -225,7 +201,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               context,
                               listen: false,
                             ).signOut();
-                            Navigator.pushReplacementNamed(context, '/welcome');
+                            context.go('/welcome');
                           },
                           borderRadius: BorderRadius.circular(12),
                           child: Padding(

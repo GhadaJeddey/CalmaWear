@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../utils/constants.dart';
+import '../providers/auth_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -20,7 +23,29 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
     _initializeAnimations();
-    _startAnimationSequence();
+    _checkAuthAndNavigate();
+  }
+
+  Future<void> _checkAuthAndNavigate() async {
+    _controller.forward();
+
+    // Initialize AuthProvider and check if user is logged in
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    await authProvider.initialize();
+
+    // Wait for animation to complete (minimum 2.5 seconds)
+    await Future.delayed(const Duration(milliseconds: 2500));
+
+    if (!mounted) return;
+
+    // Navigate based on authentication status
+    if (authProvider.currentUser != null) {
+      print('✅ User logged in: ${authProvider.currentUser!.email}');
+      context.go('/home');
+    } else {
+      print('❌ No user logged in, going to welcome');
+      context.go('/welcome');
+    }
   }
 
   void _initializeAnimations() {
@@ -61,15 +86,6 @@ class _SplashScreenState extends State<SplashScreen>
             curve: const Interval(0.5, 1.0, curve: Curves.easeOut),
           ),
         );
-  }
-
-  void _startAnimationSequence() {
-    _controller.forward();
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/welcome');
-      }
-    });
   }
 
   @override

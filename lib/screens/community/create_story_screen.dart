@@ -53,6 +53,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
       title: _titleController.text.trim(),
       content: _contentController.text.trim(),
       authorName: user.name,
+      authorProfileImageUrl: user.profileImageUrl,
     );
 
     if (mounted) {

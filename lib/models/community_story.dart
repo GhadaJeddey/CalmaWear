@@ -7,6 +7,7 @@ class CommunityStory {
   final String content;
   final String authorId;
   final String authorName;
+  final String? authorProfileImageUrl;
   final DateTime createdAt;
   final int likes;
   final int readTime; // in minutes
@@ -18,6 +19,7 @@ class CommunityStory {
     required this.content,
     required this.authorId,
     required this.authorName,
+    this.authorProfileImageUrl,
     required this.createdAt,
     required this.likes,
     required this.readTime,
@@ -31,6 +33,7 @@ class CommunityStory {
       content: data['content'] ?? '',
       authorId: data['authorId'] ?? '',
       authorName: data['authorName'] ?? 'Anonymous',
+      authorProfileImageUrl: data['authorProfileImageUrl'],
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       likes: data['likes'] ?? 0,
       readTime: data['readTime'] ?? 5,
@@ -44,6 +47,7 @@ class CommunityStory {
       'content': content,
       'authorId': authorId,
       'authorName': authorName,
+      'authorProfileImageUrl': authorProfileImageUrl,
       'createdAt': Timestamp.fromDate(createdAt),
       'likes': likes,
       'readTime': readTime,
@@ -57,6 +61,7 @@ class CommunityStory {
     String? content,
     String? authorId,
     String? authorName,
+    String? authorProfileImageUrl,
     DateTime? createdAt,
     int? likes,
     int? readTime,
@@ -68,6 +73,8 @@ class CommunityStory {
       content: content ?? this.content,
       authorId: authorId ?? this.authorId,
       authorName: authorName ?? this.authorName,
+      authorProfileImageUrl:
+          authorProfileImageUrl ?? this.authorProfileImageUrl,
       createdAt: createdAt ?? this.createdAt,
       likes: likes ?? this.likes,
       readTime: readTime ?? this.readTime,

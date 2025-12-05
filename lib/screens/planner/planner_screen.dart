@@ -1,9 +1,6 @@
 // screens/planner/planner_screen.dart
 import 'package:flutter/material.dart';
-import '../dashboard/home_screen.dart';
-import '../chat/chat_screen.dart';
-import '../community/community_screen.dart';
-import '../profile/profile_screen.dart';
+import 'package:go_router/go_router.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import 'package:provider/provider.dart';
 import '../../providers/planner_provider.dart';
@@ -38,36 +35,15 @@ class _PlannerScreenState extends State<PlannerScreen> {
 
     switch (index) {
       case 0:
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => HomeScreen()),
-          (route) => false,
-        );
+        context.go('/home');
         break;
-      case 1:
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const ChatScreen(fromScreen: 'planner'),
-          ),
-          (route) => false,
-        );
+      case 1: // Planner (current screen)
         break;
       case 2:
+        context.go('/community');
         break;
       case 3:
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => CommunityScreen()),
-          (route) => false,
-        );
-        break;
-      case 4:
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => ProfileScreen()),
-          (route) => false,
-        );
+        context.go('/profile');
         break;
     }
   }
@@ -175,15 +151,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 20),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF0066FF), Color(0xFF0052D4)],
-                ),
+                color: const Color(0xFF0066FF).withOpacity(0.9),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF0066FF).withOpacity(0.3),
+                    color: const Color(0xFFCAD6FF).withOpacity(0.3),
                     blurRadius: 15,
                     offset: const Offset(0, 8),
                   ),
@@ -455,23 +427,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
               Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF0066FF), Color(0xFF0052D4)],
-                  ),
-                ),
-                child: TextButton(
-                  onPressed: () => _showAddTaskDialog(context),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                    child: Text(
-                      'Add New Task',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+                  color: const Color(0xFF0066FF),
                 ),
               ),
             ],
@@ -523,15 +479,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       : const Color(0xFFD1D5DB),
                   width: 2,
                 ),
-                gradient: todo.isCompleted
-                    ? const LinearGradient(
-                        colors: [
-                          Color(0xFF0066FF),
-                          Color(0xFF0052D4),
-                        ], // Changé en bleu
-                      )
-                    : null,
-                color: todo.isCompleted ? null : Colors.transparent,
+                color: todo.isCompleted
+                    ? const Color(0xFF0066FF)
+                    : Colors.transparent,
               ),
               child: todo.isCompleted
                   ? const Icon(Icons.check, size: 18, color: Colors.white)
@@ -743,9 +693,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF0066FF), Color(0xFF0052D4)],
-                        ),
+                        color: const Color(0xFF0066FF),
                       ),
                       child: ElevatedButton(
                         onPressed: () {
@@ -822,13 +770,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
                             Container(
                               width: 40,
                               height: 40,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFF0066FF),
-                                    Color.fromARGB(255, 0, 67, 168),
-                                  ],
-                                ),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF0066FF),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
@@ -902,7 +845,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'AI will suggest self-care tasks based on your context',
+                                  'AI will suggest tasks based on your context',
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: Colors.grey[600],
@@ -1094,12 +1037,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                               Container(
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(12),
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFF0066FF),
-                                      Color.fromARGB(255, 0, 71, 179),
-                                    ],
-                                  ),
+                                  color: const Color(0xFF0066FF),
                                 ),
                                 child: ElevatedButton(
                                   onPressed:
@@ -1184,12 +1122,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                               Container(
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(12),
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFF10B981),
-                                      Color(0xFF059669),
-                                    ],
-                                  ),
+                                  color: const Color(0xFF10B981),
                                 ),
                                 child: ElevatedButton(
                                   onPressed: () {
@@ -1278,6 +1211,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
               ),
+              backgroundColor: const Color(0xFFCAD6FF),
               child: Container(
                 padding: const EdgeInsets.all(24),
                 width: MediaQuery.of(context).size.width * 0.9,
@@ -1294,7 +1228,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFF1A1A1A),
+                            color: Color(0xFF0066FF),
                           ),
                         ),
                       ],
@@ -1467,10 +1401,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
                           Container(
                             width: 40,
                             height: 40,
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF9333EA), Color(0xFF7C3AED)],
-                              ),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFD8BFD8),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
@@ -1512,9 +1444,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                   .setAiEnabled(value);
                               setState(() {});
                             },
-                            activeColor: const Color(0xFF9333EA),
+                            activeColor: const Color(0xFF9676AE),
                             trackColor: MaterialStateProperty.all(
-                              const Color(0xFFD1D5DB),
+                              const Color(0xFFD8BFD8),
                             ),
                           ),
                         ],
@@ -1529,9 +1461,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF0066FF), Color(0xFF0052D4)],
-                            ),
+                            color: const Color(0xFF0066FF),
                           ),
                           child: TextButton(
                             onPressed: () => Navigator.pop(context),

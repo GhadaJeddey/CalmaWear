@@ -1,14 +1,11 @@
 // screens/community/community_screen.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../providers/community_provider.dart';
 import '../../models/community_story.dart';
 import '../../models/community_event.dart';
-import '../dashboard/home_screen.dart';
-import '../chat/chat_screen.dart';
-import '../planner/planner_screen.dart';
-import '../profile/profile_screen.dart';
 import 'story_detail_screen.dart';
 import 'create_story_screen.dart';
 
@@ -64,36 +61,15 @@ class _CommunityScreenState extends State<CommunityScreen>
 
     switch (index) {
       case 0: // Home
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-          (route) => false,
-        );
+        context.go('/home');
         break;
       case 1: // Planner
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const PlannerScreen()),
-          (route) => false,
-        );
+        context.go('/planner');
         break;
       case 2: // Community (current screen)
         break;
-      case 3: // Chat
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const ChatScreen(fromScreen: 'community'),
-          ),
-          (route) => false,
-        );
-        break;
-      case 4: // Profile
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const ProfileScreen()),
-          (route) => false,
-        );
+      case 3: // Profile
+        context.go('/profile');
         break;
     }
   }
@@ -156,11 +132,7 @@ class _CommunityScreenState extends State<CommunityScreen>
       child: Row(
         children: [
           IconButton(
-            onPressed: () => Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (_) => const HomeScreen()),
-              (route) => false,
-            ),
+            onPressed: () => context.go('/home'),
             icon: const Icon(Icons.arrow_back_ios_rounded),
             color: const Color(0xFF0066FF),
             padding: EdgeInsets.zero,
@@ -245,25 +217,60 @@ class _CommunityScreenState extends State<CommunityScreen>
 
         return Column(
           children: [
-            // VIEW ALL button
+            // Header with View All and Share Your Story in one row
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {
-                    // TODO: Navigate to all stories
-                  },
-                  child: const Text(
-                    'VIEW ALL',
-                    style: TextStyle(
-                      color: Color(0xFF0066FF),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Row(
+                children: [
+                  // View All button on left
+                  TextButton(
+                    onPressed: () {
+                      // TODO: Navigate to all stories
+                    },
+                    child: const Text(
+                      'VIEW ALL',
+                      style: TextStyle(
+                        color: Color(0xFF0066FF),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
-                ),
+
+                  // Spacer to push Share button to right
+                  const Spacer(),
+
+                  // Share Your Story button
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CreateStoryScreen(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0066FF),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    child: const Text(
+                      'Share Your Story',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
 
@@ -280,44 +287,9 @@ class _CommunityScreenState extends State<CommunityScreen>
                     ),
             ),
 
-            // Share Your Story Button
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const CreateStoryScreen(),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0066FF),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    elevation: 4,
-                  ),
-                  child: const Text(
-                    'Share Your Story',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
             // Safe Space Guidelines
             _buildSafeSpaceGuidelines(),
-
-            const SizedBox(height: 100),
+            const SizedBox(height: 20),
           ],
         );
       },
@@ -410,20 +382,30 @@ class _CommunityScreenState extends State<CommunityScreen>
                   height: 40,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF0066FF), Color(0xFF0080FF)],
-                    ),
+                    gradient: story.authorProfileImageUrl == null
+                        ? const LinearGradient(
+                            colors: [Color(0xFF0066FF), Color(0xFF0080FF)],
+                          )
+                        : null,
+                    image: story.authorProfileImageUrl != null
+                        ? DecorationImage(
+                            image: NetworkImage(story.authorProfileImageUrl!),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
                   ),
-                  child: Center(
-                    child: Text(
-                      story.authorName[0].toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+                  child: story.authorProfileImageUrl == null
+                      ? Center(
+                          child: Text(
+                            story.authorName[0].toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -506,19 +488,27 @@ class _CommunityScreenState extends State<CommunityScreen>
       ),
       child: Row(
         children: [
-          // Icon
+          // Image or Icon
           Container(
             width: 60,
             height: 60,
             decoration: BoxDecoration(
               color: const Color(0xFFF0F4FF),
               borderRadius: BorderRadius.circular(12),
+              image: event.imageUrl != null
+                  ? DecorationImage(
+                      image: NetworkImage(event.imageUrl!),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
             ),
-            child: const Icon(
-              Icons.video_call_outlined,
-              color: Color(0xFF0066FF),
-              size: 30,
-            ),
+            child: event.imageUrl == null
+                ? const Icon(
+                    Icons.video_call_outlined,
+                    color: Color(0xFF0066FF),
+                    size: 30,
+                  )
+                : null,
           ),
 
           const SizedBox(width: 16),

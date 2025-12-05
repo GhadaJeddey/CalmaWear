@@ -1,0 +1,7 @@
+User uploads image/video directly to Cloudinary (via Cloudinary SDK/API). 
+Cloudinary
++1
+
+Cloudinary returns a URL (or public ID).
+
+You store that URL (and any metadata) in Firestore or Realtime DB for later retrieval — e.g. as a field of a user’s profile, post, etc.

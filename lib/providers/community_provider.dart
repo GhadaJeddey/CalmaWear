@@ -13,7 +13,7 @@ class CommunityProvider with ChangeNotifier {
   List<CommunityEvent> _events = [];
   bool _isLoading = false;
   String? _error;
-  // Add stream subscriptions
+
   StreamSubscription<List<CommunityStory>>? _storiesSubscription;
   StreamSubscription<List<CommunityEvent>>? _eventsSubscription;
 
@@ -22,9 +22,15 @@ class CommunityProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  // Expose current user information from the internal service
   String? get currentUserId => _service.currentUserId;
   bool get isUserLoggedIn => _service.isUserLoggedIn;
+
+  void _safeNotifyListeners() {
+    Future.microtask(() {
+      notifyListeners();
+    });
+  }
+
   @override
   void dispose() {
     _storiesSubscription?.cancel();
@@ -36,7 +42,7 @@ class CommunityProvider with ChangeNotifier {
   Future<void> loadStories() async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    _safeNotifyListeners();
 
     try {
       // Get initial data
@@ -47,16 +53,15 @@ class CommunityProvider with ChangeNotifier {
       _storiesSubscription?.cancel();
       _storiesSubscription = _service.getStoriesStream().listen((stories) {
         _stories = stories;
-        // Defer notifications so they don't run synchronously during a build.
-        Future.microtask(() => notifyListeners());
+        _safeNotifyListeners();
       });
 
       _isLoading = false;
-      notifyListeners();
+      _safeNotifyListeners();
     } catch (e) {
       _error = e.toString();
       _isLoading = false;
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
@@ -65,26 +70,28 @@ class CommunityProvider with ChangeNotifier {
     required String title,
     required String content,
     required String authorName,
+    String? authorProfileImageUrl,
   }) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    _safeNotifyListeners();
 
     try {
       final storyId = await _service.createStory(
         title: title,
         content: content,
         authorName: authorName,
+        authorProfileImageUrl: authorProfileImageUrl,
       );
 
       _isLoading = false;
-      notifyListeners();
+      _safeNotifyListeners();
 
       return storyId != null;
     } catch (e) {
       _error = e.toString();
       _isLoading = false;
-      notifyListeners();
+      _safeNotifyListeners();
       return false;
     }
   }
@@ -110,12 +117,12 @@ class CommunityProvider with ChangeNotifier {
                 : [...story.likedBy, userId],
           );
 
-          notifyListeners();
+          _safeNotifyListeners();
         }
       }
     } catch (e) {
       _error = e.toString();
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
@@ -126,13 +133,13 @@ class CommunityProvider with ChangeNotifier {
 
       if (success) {
         _stories.removeWhere((s) => s.id == storyId);
-        notifyListeners();
+        _safeNotifyListeners();
       }
 
       return success;
     } catch (e) {
       _error = e.toString();
-      notifyListeners();
+      _safeNotifyListeners();
       return false;
     }
   }
@@ -143,7 +150,7 @@ class CommunityProvider with ChangeNotifier {
   Future<void> loadEvents() async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    _safeNotifyListeners();
 
     try {
       // Get initial data
@@ -154,16 +161,15 @@ class CommunityProvider with ChangeNotifier {
       _eventsSubscription?.cancel();
       _eventsSubscription = _service.getEventsStream().listen((events) {
         _events = events;
-        // Defer notifications so they don't run synchronously during a build.
-        Future.microtask(() => notifyListeners());
+        _safeNotifyListeners();
       });
 
       _isLoading = false;
-      notifyListeners();
+      _safeNotifyListeners();
     } catch (e) {
       _error = e.toString();
       _isLoading = false;
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
@@ -185,7 +191,7 @@ class CommunityProvider with ChangeNotifier {
               registeredUsers: [...event.registeredUsers, userId],
             );
 
-            notifyListeners();
+            _safeNotifyListeners();
           }
         }
       }
@@ -193,7 +199,7 @@ class CommunityProvider with ChangeNotifier {
       return success;
     } catch (e) {
       _error = e.toString();
-      notifyListeners();
+      _safeNotifyListeners();
       return false;
     }
   }
@@ -218,7 +224,7 @@ class CommunityProvider with ChangeNotifier {
                   .toList(),
             );
 
-            notifyListeners();
+            _safeNotifyListeners();
           }
         }
       }
@@ -226,7 +232,7 @@ class CommunityProvider with ChangeNotifier {
       return success;
     } catch (e) {
       _error = e.toString();
-      notifyListeners();
+      _safeNotifyListeners();
       return false;
     }
   }
@@ -238,10 +244,11 @@ class CommunityProvider with ChangeNotifier {
     required DateTime date,
     required String time,
     required String type,
+    String? imageUrl,
   }) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    _safeNotifyListeners();
 
     try {
       final eventId = await _service.createEvent(
@@ -250,23 +257,23 @@ class CommunityProvider with ChangeNotifier {
         date: date,
         time: time,
         type: type,
+        imageUrl: imageUrl,
       );
 
       _isLoading = false;
-      notifyListeners();
+      _safeNotifyListeners();
 
       return eventId != null;
     } catch (e) {
       _error = e.toString();
       _isLoading = false;
-      notifyListeners();
+      _safeNotifyListeners();
       return false;
     }
   }
 
-  /// Clear error
   void clearError() {
     _error = null;
-    notifyListeners();
+    _safeNotifyListeners();
   }
 }
