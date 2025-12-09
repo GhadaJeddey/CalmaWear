@@ -15,6 +15,12 @@ import '../screens/dashboard/notifications_screen.dart';
 import '../screens/chat/chat_history_screen.dart';
 import '../screens/profile/parent_profile.dart';
 import '../screens/profile/child_profile.dart';
+import '../screens/profile/settings/settings_screen.dart';
+import '../screens/profile/settings/notification_settings_screen.dart';
+import '../screens/profile/settings/password_manager_screen.dart';
+import '../screens/profile/settings/delete_account_screen.dart';
+import '../screens/profile/privacy_policy_screen.dart';
+import '../screens/profile/help_screen.dart';
 import '../screens/test/monitoring_test_screen.dart';
 
 // Navigator keys
@@ -24,6 +30,7 @@ final _plannerNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'planner');
 final _communityNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'community',
 );
+final _chatNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'chat');
 final _profileNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'profile');
 
 final goRouter = GoRouter(
@@ -64,20 +71,6 @@ final goRouter = GoRouter(
       path: Routes.testMonitoring,
       name: 'test-monitoring',
       builder: (context, state) => const MonitoringTestScreen(),
-    ),
-
-    // Chat route (outside shell - no bottom nav)
-    GoRoute(
-      path: Routes.chat,
-      name: 'chat',
-      builder: (context, state) => const ChatScreen(),
-      routes: [
-        GoRoute(
-          path: 'history',
-          name: 'chat-history',
-          builder: (context, state) => const ConversationHistoryScreen(),
-        ),
-      ],
     ),
 
     // Main app shell with bottom navigation
@@ -130,7 +123,27 @@ final goRouter = GoRouter(
           ],
         ),
 
-        // BRANCH 3: PROFILE
+        // BRANCH 3: CHAT
+        StatefulShellBranch(
+          navigatorKey: _chatNavigatorKey,
+          routes: [
+            GoRoute(
+              path: Routes.chat,
+              name: 'chat',
+              builder: (context, state) => const ChatScreen(),
+              routes: [
+                GoRoute(
+                  path: 'history',
+                  name: 'chat-history',
+                  builder: (context, state) =>
+                      const ConversationHistoryScreen(),
+                ),
+              ],
+            ),
+          ],
+        ),
+
+        // BRANCH 4: PROFILE
         StatefulShellBranch(
           navigatorKey: _profileNavigatorKey,
           routes: [
@@ -148,6 +161,40 @@ final goRouter = GoRouter(
                   path: 'child',
                   name: 'child-profile',
                   builder: (context, state) => const ChildProfileScreen(),
+                ),
+                GoRoute(
+                  path: 'privacy-policy',
+                  name: 'privacy-policy',
+                  builder: (context, state) => const PrivacyPolicyScreen(),
+                ),
+                GoRoute(
+                  path: 'help',
+                  name: 'help',
+                  builder: (context, state) => const HelpScreen(),
+                ),
+                GoRoute(
+                  path: 'settings',
+                  name: 'settings',
+                  builder: (context, state) => const SettingsScreen(),
+                  routes: [
+                    GoRoute(
+                      path: 'notifications',
+                      name: 'notification-settings',
+                      builder: (context, state) =>
+                          const NotificationSettingScreen(),
+                    ),
+                    GoRoute(
+                      path: 'password',
+                      name: 'password-manager',
+                      builder: (context, state) =>
+                          const PasswordManagerScreen(),
+                    ),
+                    GoRoute(
+                      path: 'delete',
+                      name: 'delete-account',
+                      builder: (context, state) => const DeleteAccountScreen(),
+                    ),
+                  ],
                 ),
               ],
             ),

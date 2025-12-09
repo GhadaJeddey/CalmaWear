@@ -48,6 +48,7 @@ class DefaultFirebaseOptions {
     authDomain: 'calmawear-81263.firebaseapp.com',
     storageBucket: 'calmawear-81263.firebasestorage.app',
     measurementId: 'G-96HGSBXJ0E',
+    databaseURL: 'https://calmawear-81263-default-rtdb.firebaseio.com',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -56,6 +57,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1032766533514',
     projectId: 'calmawear-81263',
     storageBucket: 'calmawear-81263.firebasestorage.app',
+    databaseURL: 'https://calmawear-81263-default-rtdb.firebaseio.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -65,6 +67,7 @@ class DefaultFirebaseOptions {
     projectId: 'calmawear-81263',
     storageBucket: 'calmawear-81263.firebasestorage.app',
     iosBundleId: 'com.example.calmaWear',
+    databaseURL: 'https://calmawear-81263-default-rtdb.firebaseio.com',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -84,5 +87,6 @@ class DefaultFirebaseOptions {
     authDomain: 'calmawear-81263.firebaseapp.com',
     storageBucket: 'calmawear-81263.firebasestorage.app',
     measurementId: 'G-0EMLN5NCR6',
+    databaseURL: 'https://calmawear-81263-default-rtdb.firebaseio.com',
   );
 }

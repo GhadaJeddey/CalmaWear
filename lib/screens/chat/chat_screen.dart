@@ -9,6 +9,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'chat_history_screen.dart';
 import '../../services/chat_service.dart';
+import '../../widgets/bottom_nav_bar.dart';
 
 class ChatScreen extends StatefulWidget {
   final String? fromScreen;
@@ -23,6 +24,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
+  int _currentBottomNavIndex = 3; // Chat is at index 3
 
   // App primary color
   static const Color _primaryColor = Color(0xFF0066FF);
@@ -184,6 +186,27 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  void _onBottomNavTapped(int index) {
+    if (index == _currentBottomNavIndex) return;
+
+    switch (index) {
+      case 0: // Home
+        context.go('/home');
+        break;
+      case 1: // Planner
+        context.go('/planner');
+        break;
+      case 2: // Community
+        context.go('/community');
+        break;
+      case 3: // Chat (current screen)
+        break;
+      case 4: // Profile
+        context.go('/profile');
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final chatProvider = Provider.of<ChatProvider>(context);
@@ -210,6 +233,10 @@ class _ChatScreenState extends State<ChatScreen> {
             _buildMessageInput(),
           ],
         ),
+      ),
+      bottomNavigationBar: CustomBottomNavBar(
+        currentIndex: _currentBottomNavIndex,
+        onTap: _onBottomNavTapped,
       ),
     );
   }

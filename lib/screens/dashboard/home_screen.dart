@@ -7,6 +7,7 @@ import '../../providers/monitoring_provider.dart';
 import '../../providers/planner_provider.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../models/sensor_data.dart';
+import '../../models/alert.dart';
 import '../chat/chat_screen.dart';
 import '../planner/planner_screen.dart';
 import '../community/community_screen.dart';
@@ -80,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen>
         break;
       case 2:
         context.go(Routes.community);
+        break;
       case 3:
         context.go(Routes.chat);
         break;
@@ -114,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen>
           children: [
             Column(
               children: [
-                _buildHeader(user?.name ?? 'User'),
+                _buildHeader(user?.name ?? 'User', user?.profileImageUrl),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -122,15 +124,17 @@ class _HomeScreenState extends State<HomeScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 20),
+                        _buildConnectedDevices(),
+                        const SizedBox(height: 20),
                         _buildCurrentStatusCard(monitoringProvider),
                         const SizedBox(height: 20),
                         _buildLastTriggerCard(monitoringProvider),
                         const SizedBox(height: 20),
                         _buildVitalSignsSection(monitoringProvider),
                         const SizedBox(height: 20),
-                        _buildCrisisHistoryChart(monitoringProvider),
+                        _buildWeeklyStressChart(monitoringProvider),
                         const SizedBox(height: 20),
-                        _buildConnectedDevices(),
+                        _buildWeeklyHeartRateChart(monitoringProvider),
                         const SizedBox(height: 100),
                       ],
                     ),
@@ -149,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _buildHeader(String userName) {
+  Widget _buildHeader(String userName, String? profileImageUrl) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -170,17 +174,25 @@ class _HomeScreenState extends State<HomeScreen>
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(color: const Color(0xFF0066FF), width: 2),
+              image: profileImageUrl != null
+                  ? DecorationImage(
+                      image: NetworkImage(profileImageUrl),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
             ),
-            child: ClipOval(
-              child: Container(
-                color: const Color(0xFFE3F2FD),
-                child: const Icon(
-                  Icons.person,
-                  color: Color(0xFF0066FF),
-                  size: 28,
-                ),
-              ),
-            ),
+            child: profileImageUrl == null
+                ? ClipOval(
+                    child: Container(
+                      color: const Color(0xFFE3F2FD),
+                      child: const Icon(
+                        Icons.person,
+                        color: Color(0xFF0066FF),
+                        size: 28,
+                      ),
+                    ),
+                  )
+                : null,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -212,20 +224,6 @@ class _HomeScreenState extends State<HomeScreen>
               color: const Color(0xFF0066FF),
               onPressed: () {
                 context.pushNamed('notifications');
-              },
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFFF0F4FF),
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.settings_outlined),
-              color: const Color(0xFF0066FF),
-              onPressed: () {
-                // Settings action
               },
             ),
           ),
@@ -335,22 +333,31 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildLastTriggerCard(MonitoringProvider provider) {
-    final alerts = provider.activeAlerts;
-    final lastAlert = alerts.isNotEmpty ? alerts.last : null;
+    final sensorData = provider.currentSensorData;
+    final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
 
-    if (lastAlert == null || lastAlert.isResolved) {
+    if (sensorData == null || user == null) {
+      return const SizedBox();
+    }
+
+    // Only show if stress score is above threshold (75)
+    if (sensorData.stressScore <= 75) {
       return const SizedBox();
     }
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: LinearGradient(
+          colors: [Colors.red.shade50, Colors.orange.shade50],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.red.shade200, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.red.withOpacity(0.1),
+            color: Colors.red.withOpacity(0.15),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -361,13 +368,20 @@ class _HomeScreenState extends State<HomeScreen>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.red.shade50,
+              color: Colors.white,
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.red.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Icon(
-              Icons.notification_important,
+              Icons.warning_rounded,
               color: Colors.red.shade600,
-              size: 24,
+              size: 28,
             ),
           ),
           const SizedBox(width: 16),
@@ -376,22 +390,60 @@ class _HomeScreenState extends State<HomeScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Last Detected Trigger',
+                  'Last Detected Alert',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Colors.red.shade700,
+                    color: Colors.grey[600],
+                    letterSpacing: 0.5,
                   ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.crisis_alert,
+                      color: Colors.red.shade700,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Stress Alert',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.red.shade700,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${sensorData.stressScore.round()}%',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.red.shade800,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  lastAlert.message,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _getTimeAgo(lastAlert.timestamp),
-                  style: TextStyle(fontSize: 11, color: Colors.red.shade500),
+                  _getTimeAgo(sensorData.timestamp),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.orange.shade700,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -548,7 +600,10 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _buildCrisisHistoryChart(MonitoringProvider provider) {
+  Widget _buildWeeklyStressChart(MonitoringProvider provider) {
+    // Get last 7 days of alert counts
+    final weeklyAlerts = _getWeeklyAlertCounts(provider.activeAlerts);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -565,59 +620,201 @@ class _HomeScreenState extends State<HomeScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Crisis history',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1A1A1A),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Weekly Alerts',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFEBEE),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${weeklyAlerts.reduce((a, b) => a + b).toInt()} Total',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFD32F2F),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 20),
           SizedBox(
             height: 200,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _buildBarChart('Su', 0.3, const Color(0xFFE3F2FD)),
-                _buildBarChart('Mo', 0.5, const Color(0xFFBBDEFB)),
-                _buildBarChart('Tu', 0.7, const Color(0xFF90CAF9)),
-                _buildBarChart('We', 0.6, const Color(0xFF64B5F6)),
-                _buildBarChart('Th', 0.8, const Color(0xFF42A5F5)),
-                _buildBarChart('Fr', 1.0, const Color(0xFF0066FF)),
-                _buildBarChart('Sa', 0.0, const Color(0xFFE3F2FD)),
-              ],
+            child: CustomPaint(
+              painter: BarChartPainter(
+                dataPoints: weeklyAlerts,
+                color: const Color(0xFFD32F2F),
+                maxValue: weeklyAlerts.reduce((a, b) => a > b ? a : b) + 2,
+              ),
+              child: Container(),
             ),
           ),
+          const SizedBox(height: 16),
+          _buildWeekDayLabels(),
         ],
       ),
     );
   }
 
-  Widget _buildBarChart(String day, double value, Color color) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Container(
-          width: 32,
-          height: 160 * value,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(8),
+  Widget _buildWeeklyHeartRateChart(MonitoringProvider provider) {
+    // Get last 7 days of data
+    final weeklyData = _getWeeklyAverages(provider.sensorHistory, false);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          day,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Weekly Heart Rate',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF3E0),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  'BPM',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFFF9800),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 200,
+            child: CustomPaint(
+              painter: LineChartPainter(
+                dataPoints: weeklyData,
+                color: const Color(0xFFFF9800),
+                maxValue: 140,
+                minValue: 60,
+                showGradient: true,
+              ),
+              child: Container(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildWeekDayLabels(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeekDayLabels() {
+    final now = DateTime.now();
+    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: List.generate(7, (index) {
+        final dayIndex = (now.weekday - 7 + index + 1) % 7;
+        return Text(
+          days[dayIndex],
           style: TextStyle(
             fontSize: 12,
             color: Colors.grey[600],
             fontWeight: FontWeight.w500,
           ),
-        ),
-      ],
+        );
+      }),
     );
+  }
+
+  List<double> _getWeeklyAverages(
+    List<SensorData> history,
+    bool isStressScore,
+  ) {
+    final now = DateTime.now();
+    final weeklyAverages = List<double>.filled(7, 0.0);
+    final counts = List<int>.filled(7, 0);
+
+    // Group data by day of week (last 7 days)
+    for (final data in history) {
+      final daysDiff = now.difference(data.timestamp).inDays;
+      if (daysDiff < 7) {
+        final index = 6 - daysDiff; // Most recent day at index 6
+        if (isStressScore) {
+          weeklyAverages[index] += data.stressScore;
+        } else {
+          weeklyAverages[index] += data.heartRate;
+        }
+        counts[index]++;
+      }
+    }
+
+    // Calculate averages
+    for (int i = 0; i < 7; i++) {
+      if (counts[i] > 0) {
+        weeklyAverages[i] = weeklyAverages[i] / counts[i];
+      } else {
+        // Use mock data if no real data available
+        if (isStressScore) {
+          weeklyAverages[i] = 30 + math.Random().nextDouble() * 40;
+        } else {
+          weeklyAverages[i] = 70 + math.Random().nextDouble() * 20;
+        }
+      }
+    }
+
+    return weeklyAverages;
+  }
+
+  List<double> _getWeeklyAlertCounts(List<Alert> alerts) {
+    final now = DateTime.now();
+    final weeklyCounts = List<double>.filled(7, 0.0);
+
+    // Count alerts by day of week (last 7 days)
+    for (final alert in alerts) {
+      final daysDiff = now.difference(alert.timestamp).inDays;
+      if (daysDiff < 7) {
+        final index = 6 - daysDiff; // Most recent day at index 6
+        weeklyCounts[index]++;
+      }
+    }
+
+    return weeklyCounts;
   }
 
   Widget _buildConnectedDevices() {
@@ -913,5 +1110,194 @@ class ConcentricCirclesPainter extends CustomPainter {
   bool shouldRepaint(ConcentricCirclesPainter oldDelegate) {
     return oldDelegate.percentage != percentage ||
         oldDelegate.animationValue != animationValue;
+  }
+}
+
+// Line Chart Painter for weekly graphs
+class LineChartPainter extends CustomPainter {
+  final List<double> dataPoints;
+  final Color color;
+  final double maxValue;
+  final double minValue;
+  final bool showGradient;
+
+  LineChartPainter({
+    required this.dataPoints,
+    required this.color,
+    this.maxValue = 100,
+    this.minValue = 0,
+    this.showGradient = false,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (dataPoints.isEmpty) return;
+
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final dotPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    final points = <Offset>[];
+
+    // Calculate points
+    final spacing = size.width / (dataPoints.length - 1);
+    for (int i = 0; i < dataPoints.length; i++) {
+      final x = i * spacing;
+      final normalizedValue =
+          (dataPoints[i] - minValue) / (maxValue - minValue);
+      final y = size.height - (normalizedValue * size.height);
+      points.add(Offset(x, y.clamp(0, size.height)));
+    }
+
+    // Draw gradient fill if enabled
+    if (showGradient && points.isNotEmpty) {
+      final gradientPath = Path();
+      gradientPath.moveTo(points.first.dx, size.height);
+      gradientPath.lineTo(points.first.dx, points.first.dy);
+
+      for (int i = 1; i < points.length; i++) {
+        gradientPath.lineTo(points[i].dx, points[i].dy);
+      }
+
+      gradientPath.lineTo(points.last.dx, size.height);
+      gradientPath.close();
+
+      final gradientPaint = Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [color.withOpacity(0.3), color.withOpacity(0.05)],
+        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+      canvas.drawPath(gradientPath, gradientPaint);
+    }
+
+    // Draw line
+    if (points.isNotEmpty) {
+      path.moveTo(points.first.dx, points.first.dy);
+      for (int i = 1; i < points.length; i++) {
+        path.lineTo(points[i].dx, points[i].dy);
+      }
+      canvas.drawPath(path, paint);
+    }
+
+    // Draw dots
+    for (final point in points) {
+      canvas.drawCircle(point, 4, dotPaint);
+      canvas.drawCircle(
+        point,
+        6,
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2,
+      );
+    }
+
+    // Draw grid lines
+    final gridPaint = Paint()
+      ..color = Colors.grey.withOpacity(0.2)
+      ..strokeWidth = 1;
+
+    for (int i = 0; i <= 4; i++) {
+      final y = (size.height / 4) * i;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(LineChartPainter oldDelegate) {
+    return oldDelegate.dataPoints != dataPoints ||
+        oldDelegate.color != color ||
+        oldDelegate.maxValue != maxValue ||
+        oldDelegate.minValue != minValue;
+  }
+}
+
+// Bar Chart Painter for Weekly Alerts
+class BarChartPainter extends CustomPainter {
+  final List<double> dataPoints;
+  final Color color;
+  final double maxValue;
+
+  BarChartPainter({
+    required this.dataPoints,
+    required this.color,
+    required this.maxValue,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (dataPoints.isEmpty || maxValue == 0) return;
+
+    final barWidth = size.width / (dataPoints.length * 2);
+    final spacing = barWidth;
+
+    // Draw grid lines
+    final gridPaint = Paint()
+      ..color = Colors.grey.withOpacity(0.2)
+      ..strokeWidth = 1;
+
+    for (int i = 0; i <= 4; i++) {
+      final y = (size.height / 4) * i;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    }
+
+    // Draw bars
+    for (int i = 0; i < dataPoints.length; i++) {
+      final x = (i * 2 + 0.5) * barWidth;
+      final normalizedValue = dataPoints[i] / maxValue;
+      final barHeight = normalizedValue * size.height;
+      final y = size.height - barHeight;
+
+      // Bar gradient
+      final barRect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(x, y, barWidth, barHeight),
+        const Radius.circular(4),
+      );
+
+      final barPaint = Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [color, color.withOpacity(0.7)],
+        ).createShader(Rect.fromLTWH(x, y, barWidth, barHeight));
+
+      canvas.drawRRect(barRect, barPaint);
+
+      // Draw count label on top of bar if > 0
+      if (dataPoints[i] > 0) {
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: dataPoints[i].toInt().toString(),
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout();
+        textPainter.paint(
+          canvas,
+          Offset(x + (barWidth - textPainter.width) / 2, y - 18),
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(BarChartPainter oldDelegate) {
+    return oldDelegate.dataPoints != dataPoints ||
+        oldDelegate.color != color ||
+        oldDelegate.maxValue != maxValue;
   }
 }

@@ -50,7 +50,8 @@ class _ChildProfileScreenState extends State<ChildProfileScreen> {
   // Voice memo related
   bool _isRecording = false;
   bool _isPlaying = false;
-  String? _voiceMemoPath;
+  String? _voiceMemoPath; // Local file path
+  String? _voiceMemoUrl; // Cloudinary URL
   Duration _recordDuration = Duration.zero;
 
   final List<ChildTrigger> _availableTriggers = [
@@ -121,6 +122,9 @@ class _ChildProfileScreenState extends State<ChildProfileScreen> {
       // Load existing child profile image URL
       _uploadedImageUrl = user.childProfileImageUrl;
 
+      // Load existing voice memo URL
+      _voiceMemoUrl = user.childVoiceMemoUrl;
+
       setState(() {}); // Refresh UI
     }
   }
@@ -189,11 +193,18 @@ class _ChildProfileScreenState extends State<ChildProfileScreen> {
   }
 
   Future<void> _playVoiceMemo() async {
-    if (_voiceMemoPath == null) return;
+    if (_voiceMemoPath == null && _voiceMemoUrl == null) return;
 
     try {
       setState(() => _isPlaying = true);
-      await _audioPlayer.play(DeviceFileSource(_voiceMemoPath!));
+
+      // Play from URL if available (works on web), otherwise from local path
+      if (_voiceMemoUrl != null) {
+        await _audioPlayer.play(UrlSource(_voiceMemoUrl!));
+      } else if (_voiceMemoPath != null) {
+        await _audioPlayer.play(DeviceFileSource(_voiceMemoPath!));
+      }
+
       _audioPlayer.onPlayerComplete.listen((event) {
         setState(() => _isPlaying = false);
       });
@@ -889,7 +900,8 @@ class _ChildProfileScreenState extends State<ChildProfileScreen> {
                         ),
                       ),
 
-                    if (_voiceMemoPath != null && !_isRecording)
+                    if ((_voiceMemoPath != null || _voiceMemoUrl != null) &&
+                        !_isRecording)
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -1272,53 +1284,90 @@ class _ChildProfileScreenState extends State<ChildProfileScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 12),
-                                Row(
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      'Intensity:',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.grey[700],
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Row(
-                                        children: List.generate(5, (i) {
-                                          return Expanded(
-                                            child: GestureDetector(
-                                              onTap: () =>
-                                                  _updateTriggerIntensity(
-                                                    index,
-                                                    i + 1,
-                                                  ),
-                                              child: Container(
-                                                margin:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 2,
-                                                    ),
-                                                height: 8,
-                                                decoration: BoxDecoration(
-                                                  color: i < trigger.intensity
-                                                      ? const Color(0xFF0066FF)
-                                                      : Colors.grey[300],
-                                                  borderRadius:
-                                                      BorderRadius.circular(4),
-                                                ),
-                                              ),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          trigger.icon,
+                                          color: const Color(0xFF0066FF),
+                                          size: 24,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            trigger.name,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(0xFF1A1A1A),
                                             ),
-                                          );
-                                        }),
-                                      ),
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFE3F2FD),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            '${trigger.intensity}%',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w700,
+                                              color: Color(0xFF0066FF),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      '${trigger.intensity}/5',
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF0066FF),
+                                    const SizedBox(height: 12),
+                                    SliderTheme(
+                                      data: SliderTheme.of(context).copyWith(
+                                        activeTrackColor: const Color(
+                                          0xFF0066FF,
+                                        ),
+                                        inactiveTrackColor: Colors.grey[300],
+                                        thumbColor: const Color(0xFF0066FF),
+                                        overlayColor: const Color(
+                                          0xFF0066FF,
+                                        ).withOpacity(0.2),
+                                        thumbShape: const RoundSliderThumbShape(
+                                          enabledThumbRadius: 12.0,
+                                        ),
+                                        overlayShape:
+                                            const RoundSliderOverlayShape(
+                                              overlayRadius: 24.0,
+                                            ),
+                                        trackHeight: 8.0,
+                                        valueIndicatorColor: const Color(
+                                          0xFF0066FF,
+                                        ),
+                                        valueIndicatorTextStyle:
+                                            const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                      ),
+                                      child: Slider(
+                                        value: trigger.intensity.toDouble(),
+                                        min: 0,
+                                        max: 100,
+                                        divisions: 100,
+                                        label: '${trigger.intensity}%',
+                                        onChanged: (double value) {
+                                          _updateTriggerIntensity(
+                                            index,
+                                            value.round(),
+                                          );
+                                        },
                                       ),
                                     ),
                                   ],

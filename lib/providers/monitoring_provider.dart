@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
-import '../services/monitoring_service.dart';
+import '../services/realtime_sensor_service.dart';
 import '../models/sensor_data.dart';
 import '../models/alert.dart';
 
 class MonitoringProvider with ChangeNotifier {
-  final MonitoringService _monitoringService = MonitoringService();
+  final RealtimeSensorService _realtimeService = RealtimeSensorService();
 
   SensorData? _currentSensorData;
   List<Alert> _activeAlerts = [];
@@ -20,8 +20,11 @@ class MonitoringProvider with ChangeNotifier {
 
   // Initialiser le monitoring
   void initializeMonitoring() {
-    // Écouter les données des capteurs
-    _monitoringService.sensorDataStream.listen((sensorData) {
+    // Set initial threshold in service
+    _realtimeService.updateStressThreshold(_stressThreshold);
+
+    // Écouter les données des capteurs depuis Firebase Realtime Database
+    _realtimeService.sensorDataStream.listen((sensorData) {
       _currentSensorData = sensorData;
       _sensorHistory.add(sensorData);
 
@@ -34,18 +37,18 @@ class MonitoringProvider with ChangeNotifier {
     });
 
     // Écouter les alertes
-    _monitoringService.alertStream.listen((alert) {
+    _realtimeService.alertStream.listen((alert) {
       _activeAlerts.add(alert);
       notifyListeners();
     });
   }
 
   // Démarrer/arrêter le monitoring
-  void toggleMonitoring() {
+  Future<void> toggleMonitoring() async {
     if (_isMonitoring) {
-      _monitoringService.stopMonitoring();
+      await _realtimeService.stopMonitoring();
     } else {
-      _monitoringService.startMonitoring();
+      await _realtimeService.startMonitoring();
     }
     _isMonitoring = !_isMonitoring;
     notifyListeners();
@@ -69,6 +72,7 @@ class MonitoringProvider with ChangeNotifier {
   // Mettre à jour le seuil de stress
   void updateStressThreshold(double newThreshold) {
     _stressThreshold = newThreshold;
+    _realtimeService.updateStressThreshold(newThreshold);
     notifyListeners();
   }
 
@@ -81,7 +85,9 @@ class MonitoringProvider with ChangeNotifier {
   }
 
   // Nettoyer
+  @override
   void dispose() {
-    _monitoringService.dispose();
+    _realtimeService.dispose();
+    super.dispose();
   }
 }

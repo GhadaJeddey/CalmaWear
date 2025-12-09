@@ -43,6 +43,7 @@ class AuthProvider with ChangeNotifier {
     required String password,
     required String name,
     String? childName,
+    List<String>? teacherPhoneNumbers,
   }) async {
     _isLoading = true;
     _error = null;
@@ -54,6 +55,7 @@ class AuthProvider with ChangeNotifier {
         password: password,
         name: name,
         childName: childName,
+        teacherPhoneNumbers: teacherPhoneNumbers,
       );
       _isLoading = false;
       notifyListeners();

@@ -120,7 +120,7 @@ class WelcomeScreen extends StatelessWidget {
               context.go('/signup');
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFCAD6FF),
+              backgroundColor: const Color(0xFFE3F2FD),
               foregroundColor: const Color(0xFF0066FF),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25),

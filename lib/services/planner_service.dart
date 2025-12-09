@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/todo_item.dart';
+import '../models/user.dart' as app_models;
 import '../../config/keys.dart';
 import 'dart:js_interop';
 import 'package:js/js.dart';
@@ -19,6 +20,7 @@ class PlannerService {
   List<DateTime> _weekDays = [];
   DateTime _currentDate = DateTime.now();
   String? _currentUserId;
+  app_models.User? _userData; // Store user/child data for AI context
   bool _isInitialized = false;
   bool _aiEnabled = true;
 
@@ -79,6 +81,7 @@ class PlannerService {
   Future<void> initialize(String userId) async {
     _currentUserId = userId;
     await _initFirestore();
+    await _loadUserData();
     await _loadUserSettings();
     await _loadUserDefaultTodos();
     await _loadTodos();
@@ -104,6 +107,21 @@ class PlannerService {
     } catch (e) {
       if (_debugMode) debugPrint('❌ Erreur Firestore: $e');
       rethrow;
+    }
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final doc = await _firestore
+          .collection('users')
+          .doc(_currentUserId)
+          .get();
+      if (doc.exists) {
+        _userData = app_models.User.fromMap(doc.data()!);
+        if (_debugMode) debugPrint('✅ User data loaded for AI context');
+      }
+    } catch (e) {
+      if (_debugMode) debugPrint('❌ Error loading user data: $e');
     }
   }
 
@@ -325,20 +343,52 @@ class PlannerService {
   }
 
   String _getPlannerSystemPrompt() {
+    // Build child context
+    String childContext = '';
+    if (_userData != null) {
+      final childName = _userData!.childName ?? 'your child';
+      final childAge = _userData!.childAge ?? 'unknown age';
+      final childGender = _userData!.childGender ?? 'child';
+
+      childContext =
+          '''\n
+CONTEXT ABOUT THE CHILD:
+- Child's name: $childName
+- Age: $childAge
+- Gender: $childGender''';
+
+      // Add trigger information if available
+      if (_userData!.childTriggers.isNotEmpty) {
+        final triggers = _userData!.childTriggers
+            .where((t) => t.intensity > 50)
+            .map((t) => '${t.name} (${t.intensity}%)')
+            .join(', ');
+        if (triggers.isNotEmpty) {
+          childContext += '\n- Main triggers: $triggers';
+        }
+      }
+
+      childContext +=
+          '\n\nTake this child information into account when suggesting tasks for the parent.\n';
+    }
+
     return '''
 Tu es Calma, assistant IA spécialisé pour parents d'enfants autistes.
-Génère 3 tâches quotidiennes de self-care concrètes et réalisables.
-
+Génère 3 tâches quotidiennes de self-care concrètes et réalisables.$childContext
 Directives:
 - Chaque tâche commence par "- "
 - Tâches courtes, spécifiques, adaptées à des parents occupés
 - Focus sur bien-être mental et physique
+- Personnalise selon le contexte de l'enfant si fourni
+- Suggère des activités qui peuvent aider le parent à mieux gérer les défis spécifiques
 - Pas de tâches trop longues ou complexes
 
 Exemples:
 - Prendre 10 minutes de respiration profonde
 - Préparer une boisson chaude relaxante
 - Noter 1 chose positive de la journée
+- Pratiquer 5 minutes de méditation guidée
+- Écrire une gratitude sur ${_userData?.childName ?? 'votre enfant'}
 
 Génère 3 tâches maintenant:
 ''';
@@ -392,18 +442,49 @@ Génère 3 tâches maintenant:
       if (_debugMode) debugPrint('🔄 Génération tâches personnalisées...');
       if (_debugMode) debugPrint('📝 Contexte utilisateur: "$userContext"');
 
+      // Build child context
+      String childContext = '';
+      if (_userData != null) {
+        final childName = _userData!.childName ?? 'your child';
+        final childAge = _userData!.childAge ?? 'unknown age';
+        final childGender = _userData!.childGender ?? 'child';
+
+        childContext =
+            '''
+
+CHILD INFORMATION:
+- Child's name: $childName
+- Age: $childAge
+- Gender: $childGender''';
+
+        // Add trigger information if available
+        if (_userData!.childTriggers.isNotEmpty) {
+          final triggers = _userData!.childTriggers
+              .where((t) => t.intensity > 50)
+              .map((t) => '${t.name} (${t.intensity}%)')
+              .join(', ');
+          if (triggers.isNotEmpty) {
+            childContext += '\n- Main triggers: $triggers';
+          }
+        }
+
+        childContext += '\n';
+      }
+
       final prompt =
           '''
 Tu es Calma, assistant IA spécialisé pour parents d'enfants autistes.
 Génère EXACTEMENT 3 à 5 tâches quotidiennes adaptées aux parents d'enfants autistes ou aux enfants en soi et au contexte suivant.
-
+$childContext
 Contexte de l'utilisateur: "$userContext"
 
 RÈGLES IMPORTANTES:
 - Génère entre 3 et 5 tâches
 - Une tâche par ligne
 - Commence chaque ligne par un tiret suivi d'un espace: "- "
-- Tâches réalisables 
+- Tâches réalisables et personnalisées selon l'enfant
+- Prends en compte l'âge, le nom et les déclencheurs de l'enfant
+- Adapte le langage et les suggestions au contexte familial
 
 Génère maintenant 3 à 5 tâches adaptées au contexte:
 ''';

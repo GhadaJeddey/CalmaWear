@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../../providers/monitoring_provider.dart';
 import '../../models/alert.dart';
 
@@ -13,20 +14,26 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  String _selectedFilter = 'Today';
-
   @override
   Widget build(BuildContext context) {
     final monitoringProvider = Provider.of<MonitoringProvider>(context);
-    final alerts = monitoringProvider.activeAlerts;
+
+    // Filter out alerts older than yesterday and sort by date (newest first)
+    final now = DateTime.now();
+    final yesterdayStart = DateTime(now.year, now.month, now.day - 1);
+
+    final recentAlerts =
+        monitoringProvider.activeAlerts
+            .where((alert) => alert.timestamp.isAfter(yesterdayStart))
+            .toList()
+          ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
     // Group alerts by date
-    final todayAlerts = _filterAlertsByDate(alerts, DateTime.now());
+    final todayAlerts = _filterAlertsByDate(recentAlerts, DateTime.now());
     final yesterdayAlerts = _filterAlertsByDate(
-      alerts,
+      recentAlerts,
       DateTime.now().subtract(const Duration(days: 1)),
     );
-    final olderAlerts = _getOlderAlerts(alerts);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -69,7 +76,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           TextButton(
             onPressed: () {
               // Mark all as read
-              for (var alert in alerts) {
+              for (var alert in recentAlerts) {
                 monitoringProvider.resolveAlert(alert.id);
               }
             },
@@ -86,9 +93,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       ),
       body: Column(
         children: [
-          // Filter Tabs
-          _buildFilterTabs(),
-
           const Divider(height: 1, thickness: 1, color: Color(0xFFF0F0F0)),
 
           // Notifications List
@@ -115,17 +119,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                 ],
 
-                if (olderAlerts.isNotEmpty) ...[
-                  const SizedBox(height: 20),
-                  _buildDateHeader('15 April'),
-                  const SizedBox(height: 12),
-                  ...olderAlerts.map(
-                    (alert) =>
-                        _buildNotificationCard(alert, monitoringProvider),
-                  ),
-                ],
-
-                if (alerts.isEmpty) ...[
+                if (recentAlerts.isEmpty) ...[
                   const SizedBox(height: 100),
                   Center(
                     child: Column(
@@ -164,46 +158,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildFilterTabs() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: Row(
-        children: [
-          _buildFilterTab('Today', true),
-          const SizedBox(width: 12),
-          _buildFilterTab('Yesterday', false),
-          const SizedBox(width: 12),
-          _buildFilterTab('Older', false),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterTab(String label, bool isSelected) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedFilter = label;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFE3F2FD) : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? const Color(0xFF0066FF) : Colors.grey[600],
-            fontSize: 14,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildDateHeader(String date) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -226,71 +180,127 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final icon = _getNotificationIcon(alert.type);
     final color = _getNotificationColor(alert.severity);
     final timeAgo = _getTimeAgo(alert.timestamp);
+    final formattedDate = DateFormat('MMM dd, HH:mm').format(alert.timestamp);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: alert.isResolved ? Colors.white : color.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: alert.isResolved
-              ? const Color(0xFFF0F0F0)
-              : color.withOpacity(0.2),
-          width: 1.5,
+    return Dismissible(
+      key: Key(alert.id),
+      direction: DismissDirection.endToStart,
+      onDismissed: (direction) {
+        provider.removeResolvedAlert(alert.id);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Notification deleted'),
+            backgroundColor: Colors.red[600],
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      },
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: Colors.red[600],
+          borderRadius: BorderRadius.circular(16),
         ),
+        alignment: Alignment.centerRight,
+        child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Icon
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 24),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: alert.isResolved ? Colors.white : color.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: alert.isResolved
+                ? const Color(0xFFF0F0F0)
+                : color.withOpacity(0.2),
+            width: 1.5,
           ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Icon
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
 
-          const SizedBox(width: 16),
+            const SizedBox(width: 16),
 
-          // Content
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      _getNotificationTitle(alert.type),
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1A1A1A),
+            // Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _getNotificationTitle(alert.type),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1A1A1A),
+                          ),
+                        ),
                       ),
-                    ),
-                    Text(
-                      timeAgo,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  alert.message,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[700],
-                    height: 1.4,
+                      const SizedBox(width: 8),
+                      Text(
+                        timeAgo,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    formattedDate,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey[500],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    alert.message,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[700],
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+
+            // Delete Button
+            IconButton(
+              onPressed: () {
+                provider.removeResolvedAlert(alert.id);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Notification deleted'),
+                    backgroundColor: Colors.red[600],
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              },
+              icon: Icon(Icons.close, color: Colors.grey[400], size: 20),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -305,13 +315,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       final targetDate = DateTime(date.year, date.month, date.day);
       return alertDate == targetDate;
     }).toList();
-  }
-
-  List<Alert> _getOlderAlerts(List<Alert> alerts) {
-    final twoDaysAgo = DateTime.now().subtract(const Duration(days: 2));
-    return alerts
-        .where((alert) => alert.timestamp.isBefore(twoDaysAgo))
-        .toList();
   }
 
   IconData _getNotificationIcon(AlertType type) {

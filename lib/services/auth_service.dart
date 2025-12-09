@@ -38,11 +38,17 @@ class AuthService {
     return _auth.authStateChanges().asyncMap(_userFromFirebase);
   }
 
+  // Get current user email
+  String? get currentUserEmail {
+    return _auth.currentUser?.email;
+  }
+
   Future<app_models.User?> signUpWithEmail({
     required String email,
     required String password,
     required String name,
     String? childName,
+    List<String>? teacherPhoneNumbers,
   }) async {
     try {
       // Créer l'utilisateur dans Firebase Auth
@@ -60,6 +66,7 @@ class AuthService {
         'email': email,
         'name': name,
         'childName': childName,
+        'teacherPhoneNumbers': teacherPhoneNumbers ?? [],
         'createdAt': Timestamp.now(),
         'stressThreshold': AppConstants.defaultStressThreshold,
         'notificationsEnabled': AppConstants.defaultNotificationsEnabled,
@@ -149,6 +156,9 @@ class AuthService {
           email: data['email'] ?? user.email ?? '',
           name: data['name'] ?? user.displayName ?? 'User',
           phoneNumber: data['phoneNumber'],
+          teacherPhoneNumbers: data['teacherPhoneNumbers'] != null
+              ? List<String>.from(data['teacherPhoneNumbers'])
+              : null,
           dateOfBirth: parseDate(data['dateOfBirth']),
           profileImageUrl: data['profileImageUrl'],
           childName: data['childName'],
@@ -156,6 +166,7 @@ class AuthService {
           childGender: data['childGender'],
           childAge: data['childAge'],
           childProfileImageUrl: data['childProfileImageUrl'],
+          childVoiceMemoUrl: data['childVoiceMemoUrl'],
           childTriggers: parseTriggers(data['childTriggers']),
           createdAt: parseDate(data['createdAt']) ?? DateTime.now(),
           stressThreshold: data['stressThreshold']?.toDouble() ?? 70.0,
@@ -178,6 +189,7 @@ class AuthService {
         'email': updatedUser.email,
         'name': updatedUser.name,
         'phoneNumber': updatedUser.phoneNumber,
+        'teacherPhoneNumbers': updatedUser.teacherPhoneNumbers,
         'dateOfBirth': updatedUser.dateOfBirth?.toIso8601String(),
         'profileImageUrl': updatedUser.profileImageUrl,
         'childName': updatedUser.childName,
@@ -185,6 +197,7 @@ class AuthService {
         'childGender': updatedUser.childGender,
         'childAge': updatedUser.childAge,
         'childProfileImageUrl': updatedUser.childProfileImageUrl,
+        'childVoiceMemoUrl': updatedUser.childVoiceMemoUrl,
         'childTriggers': updatedUser.childTriggers
             .map((t) => t.toMap())
             .toList(),
@@ -214,6 +227,152 @@ class AuthService {
       await _auth.sendPasswordResetEmail(email: email);
     } catch (e) {
       print('Erreur reset password: $e');
+      rethrow;
+    }
+  }
+
+  // Changer le mot de passe
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('No authenticated user');
+      if (user.email == null) throw Exception('User email not found');
+
+      // Re-authenticate user with current password
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+      await user.reauthenticateWithCredential(credential);
+
+      // Update password
+      await user.updatePassword(newPassword);
+
+      print('✅ Password updated successfully');
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password') {
+        throw Exception('Current password is incorrect');
+      } else if (e.code == 'weak-password') {
+        throw Exception('New password is too weak');
+      } else if (e.code == 'requires-recent-login') {
+        throw Exception(
+          'Please sign out and sign in again before changing password',
+        );
+      }
+      print('❌ Error changing password: ${e.message}');
+      rethrow;
+    } catch (e) {
+      print('❌ Error changing password: $e');
+      rethrow;
+    }
+  }
+
+  // Supprimer le compte utilisateur
+  Future<void> deleteAccount() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('No authenticated user');
+
+      final userId = user.uid;
+
+      // Delete all user-related data from Firestore
+      await _deleteUserData(userId);
+
+      // Clear local session
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', false);
+
+      // Delete the Firebase Auth account
+      await user.delete();
+
+      print('✅ Account and all related data deleted successfully');
+    } catch (e) {
+      print('❌ Error deleting account: $e');
+      rethrow;
+    }
+  }
+
+  // Helper method to delete all user-related data
+  Future<void> _deleteUserData(String userId) async {
+    try {
+      // Delete user document
+      await _firestore.collection('users').doc(userId).delete();
+
+      // Delete user's planner todos
+      final todosSnapshot = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('planner_todos')
+          .get();
+      for (var doc in todosSnapshot.docs) {
+        await doc.reference.delete();
+      }
+
+      // Delete user's planner defaults
+      final defaultsSnapshot = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('planner_defaults')
+          .get();
+      for (var doc in defaultsSnapshot.docs) {
+        await doc.reference.delete();
+      }
+
+      // Delete user's planner settings
+      final settingsSnapshot = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('planner_settings')
+          .get();
+      for (var doc in settingsSnapshot.docs) {
+        await doc.reference.delete();
+      }
+
+      // Delete user's conversations
+      final conversationsSnapshot = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('conversations')
+          .get();
+      for (var doc in conversationsSnapshot.docs) {
+        await doc.reference.delete();
+      }
+
+      // Delete community stories created by user
+      final storiesSnapshot = await _firestore
+          .collection('community_stories')
+          .where('authorId', isEqualTo: userId)
+          .get();
+      for (var doc in storiesSnapshot.docs) {
+        await doc.reference.delete();
+      }
+
+      // Delete community events created by user
+      final eventsSnapshot = await _firestore
+          .collection('community_events')
+          .where('organizerId', isEqualTo: userId)
+          .get();
+      for (var doc in eventsSnapshot.docs) {
+        await doc.reference.delete();
+      }
+
+      // Remove user from participants in events they joined
+      final participatingEventsSnapshot = await _firestore
+          .collection('community_events')
+          .where('participants', arrayContains: userId)
+          .get();
+      for (var doc in participatingEventsSnapshot.docs) {
+        await doc.reference.update({
+          'participants': FieldValue.arrayRemove([userId]),
+        });
+      }
+
+      print('✅ All user data deleted from Firestore');
+    } catch (e) {
+      print('❌ Error deleting user data: $e');
       rethrow;
     }
   }

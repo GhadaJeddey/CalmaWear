@@ -15,7 +15,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  int _currentBottomNavIndex = 3; // Profile is at index 3
+  int _currentBottomNavIndex = 4; // Profile is at index 4
 
   void _onBottomNavTapped(int index) {
     if (index == _currentBottomNavIndex) return;
@@ -30,7 +30,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       case 2: // Community
         context.go('/community');
         break;
-      case 3: // Profile (current screen)
+      case 3: // Chat
+        context.go('/chat');
+        break;
+      case 4: // Profile (current screen)
         break;
     }
   }
@@ -139,14 +142,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       },
                     ),
 
-                    // Favorite
+                    // Settings
                     _buildProfileOption(
-                      icon: Icons.favorite_border,
-                      title: 'Favorite',
-                      subtitle: 'Your saved items',
+                      icon: Icons.settings_outlined,
+                      title: 'Settings',
+                      subtitle: 'App preferences & notifications',
                       iconColor: const Color(0xFF0066FF),
                       onTap: () {
-                        // TODO: Naviguer vers Favorite
+                        context.push('/profile/settings');
                       },
                     ),
 
@@ -157,18 +160,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       subtitle: 'Read our privacy terms',
                       iconColor: const Color(0xFF0066FF),
                       onTap: () {
-                        // TODO: Ouvrir Privacy Policy
-                      },
-                    ),
-
-                    // Settings
-                    _buildProfileOption(
-                      icon: Icons.settings_outlined,
-                      title: 'Settings',
-                      subtitle: 'App preferences & notifications',
-                      iconColor: const Color(0xFF0066FF),
-                      onTap: () {
-                        // TODO: Naviguer vers Settings
+                        context.push('/profile/privacy-policy');
                       },
                     ),
 
@@ -179,7 +171,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       subtitle: 'FAQ & Contact support',
                       iconColor: const Color(0xFF0066FF),
                       onTap: () {
-                        // TODO: Naviguer vers Help
+                        context.push('/profile/help');
                       },
                     ),
 

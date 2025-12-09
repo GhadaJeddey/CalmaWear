@@ -7,6 +7,8 @@ class User {
   final String email;
   final String name;
   final String? phoneNumber;
+  final List<String>
+  teacherPhoneNumbers; // Teacher contact numbers for SMS alerts
 
   // Parent info
   final DateTime? dateOfBirth;
@@ -18,6 +20,7 @@ class User {
   final String? childGender; // 'male', 'female', 'other'
   final String? childAge;
   final String? childProfileImageUrl;
+  final String? childVoiceMemoUrl; // Cloudinary URL for voice memo
   final List<ChildTrigger> childTriggers;
 
   final DateTime createdAt;
@@ -29,6 +32,7 @@ class User {
     required this.email,
     this.phoneNumber,
     required this.name,
+    List<String>? teacherPhoneNumbers,
 
     // Parent
     this.dateOfBirth,
@@ -40,12 +44,14 @@ class User {
     this.childGender,
     this.childAge,
     this.childProfileImageUrl,
+    this.childVoiceMemoUrl,
     List<ChildTrigger>? childTriggers,
 
     required this.createdAt,
     double? stressThreshold,
     this.notificationsEnabled = true,
-  }) : stressThreshold = stressThreshold ?? AppConstants.defaultStressThreshold,
+  }) : teacherPhoneNumbers = teacherPhoneNumbers ?? [],
+       stressThreshold = stressThreshold ?? AppConstants.defaultStressThreshold,
        childTriggers =
            childTriggers ??
            [
@@ -72,6 +78,7 @@ class User {
     String? email,
     String? name,
     String? phoneNumber,
+    List<String>? teacherPhoneNumbers,
 
     // Parent
     DateTime? dateOfBirth,
@@ -83,6 +90,7 @@ class User {
     String? childGender,
     String? childAge,
     String? childProfileImageUrl,
+    String? childVoiceMemoUrl,
     List<ChildTrigger>? childTriggers,
 
     DateTime? createdAt,
@@ -94,6 +102,7 @@ class User {
       email: email ?? this.email,
       name: name ?? this.name,
       phoneNumber: phoneNumber ?? this.phoneNumber,
+      teacherPhoneNumbers: teacherPhoneNumbers ?? this.teacherPhoneNumbers,
 
       // Parent
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
@@ -105,6 +114,7 @@ class User {
       childGender: childGender ?? this.childGender,
       childAge: childAge ?? this.childAge,
       childProfileImageUrl: childProfileImageUrl ?? this.childProfileImageUrl,
+      childVoiceMemoUrl: childVoiceMemoUrl ?? this.childVoiceMemoUrl,
       childTriggers: childTriggers ?? this.childTriggers,
 
       createdAt: createdAt ?? this.createdAt,
@@ -119,6 +129,7 @@ class User {
       'email': email,
       'name': name,
       'phoneNumber': phoneNumber,
+      'teacherPhoneNumbers': teacherPhoneNumbers,
       'dateOfBirth': dateOfBirth?.toIso8601String(),
       'profileImageUrl': profileImageUrl,
       'childName': childName,
@@ -126,6 +137,7 @@ class User {
       'childGender': childGender,
       'childAge': childAge,
       'childProfileImageUrl': childProfileImageUrl,
+      'childVoiceMemoUrl': childVoiceMemoUrl,
       'childTriggers': childTriggers.map((t) => t.toMap()).toList(),
       'createdAt': createdAt.toIso8601String(),
       'stressThreshold': stressThreshold,
@@ -139,6 +151,9 @@ class User {
       email: map['email'],
       name: map['name'],
       phoneNumber: map['phoneNumber'],
+      teacherPhoneNumbers: map['teacherPhoneNumbers'] != null
+          ? List<String>.from(map['teacherPhoneNumbers'])
+          : null,
       dateOfBirth: map['dateOfBirth'] != null
           ? DateTime.parse(map['dateOfBirth'])
           : null,
@@ -150,6 +165,7 @@ class User {
       childGender: map['childGender'],
       childAge: map['childAge'],
       childProfileImageUrl: map['childProfileImageUrl'],
+      childVoiceMemoUrl: map['childVoiceMemoUrl'],
       childTriggers: map['childTriggers'] != null
           ? (map['childTriggers'] as List)
                 .map((t) => ChildTrigger.fromMap(t))

@@ -43,6 +43,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
         context.go('/community');
         break;
       case 3:
+        context.go('/chat');
+        break;
+      case 4:
         context.go('/profile');
         break;
     }
@@ -155,7 +158,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFCAD6FF).withOpacity(0.3),
+                    color: const Color(0xFFBBDEFB).withOpacity(0.3),
                     blurRadius: 15,
                     offset: const Offset(0, 8),
                   ),
@@ -1211,7 +1214,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
               ),
-              backgroundColor: const Color(0xFFCAD6FF),
+              backgroundColor: const Color(0xFFE3F2FD),
               child: Container(
                 padding: const EdgeInsets.all(24),
                 width: MediaQuery.of(context).size.width * 0.9,

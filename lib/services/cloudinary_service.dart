@@ -6,18 +6,19 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
+import '../config/keys.dart';
 
 class CloudinaryService {
   // === CONFIGURATION ===
-  static const String _cloudName = 'dddramjte';
-  static const String _apiKey = '547371798173645';
-  static const String _apiSecret =
-      '3OdmnWBbZNu5o0dr1v4qVX9H6Gg'; // ⚠️ Replace with your API secret from Cloudinary dashboard
+  // Using secure configuration from ApiKeys
+  static String get _cloudName => ApiKeys.cloudinaryCloudName;
+  static String get _apiKey => ApiKeys.cloudinaryApiKey;
+  static String get _apiSecret => ApiKeys.cloudinaryApiSecret;
 
   // URLs Cloudinary
-  static const String _imageUploadUrl =
+  static String get _imageUploadUrl =>
       'https://api.cloudinary.com/v1_1/$_cloudName/image/upload';
-  static const String _audioUploadUrl =
+  static String get _audioUploadUrl =>
       'https://api.cloudinary.com/v1_1/$_cloudName/video/upload';
 
   // Singleton pattern

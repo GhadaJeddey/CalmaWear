@@ -8,6 +8,7 @@ import '../../models/community_story.dart';
 import '../../models/community_event.dart';
 import 'story_detail_screen.dart';
 import 'create_story_screen.dart';
+import 'event_detail_screen.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({Key? key}) : super(key: key);
@@ -68,7 +69,10 @@ class _CommunityScreenState extends State<CommunityScreen>
         break;
       case 2: // Community (current screen)
         break;
-      case 3: // Profile
+      case 3: // Chat
+        context.go('/chat');
+        break;
+      case 4: // Profile
         context.go('/profile');
         break;
     }
@@ -225,7 +229,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                   // View All button on left
                   TextButton(
                     onPressed: () {
-                      // TODO: Navigate to all stories
+                      _showAllStories(context);
                     },
                     child: const Text(
                       'VIEW ALL',
@@ -310,7 +314,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {
-                    // TODO: Navigate to all events
+                    _showAllEvents(context);
                   },
                   child: const Text(
                     'VIEW ALL',
@@ -340,8 +344,6 @@ class _CommunityScreenState extends State<CommunityScreen>
 
             // Safe Space Guidelines
             _buildSafeSpaceGuidelines(),
-
-            const SizedBox(height: 100),
           ],
         );
       },
@@ -471,149 +473,164 @@ class _CommunityScreenState extends State<CommunityScreen>
   }
 
   Widget _buildEventCard(CommunityEvent event) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF0F0F0), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Image or Icon
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0F4FF),
-              borderRadius: BorderRadius.circular(12),
-              image: event.imageUrl != null
-                  ? DecorationImage(
-                      image: NetworkImage(event.imageUrl!),
-                      fit: BoxFit.cover,
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => EventDetailScreen(event: event)),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFF0F0F0), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Image or Icon
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0F4FF),
+                borderRadius: BorderRadius.circular(12),
+                image: event.imageUrl != null
+                    ? DecorationImage(
+                        image: NetworkImage(event.imageUrl!),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+              ),
+              child: event.imageUrl == null
+                  ? const Icon(
+                      Icons.video_call_outlined,
+                      color: Color(0xFF0066FF),
+                      size: 30,
                     )
                   : null,
             ),
-            child: event.imageUrl == null
-                ? const Icon(
-                    Icons.video_call_outlined,
-                    color: Color(0xFF0066FF),
-                    size: 30,
-                  )
-                : null,
-          ),
 
-          const SizedBox(width: 16),
+            const SizedBox(width: 16),
 
-          // Event details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  event.title,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF0066FF),
+            // Event details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event.title,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0066FF),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  event.description,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today_outlined,
-                      size: 14,
-                      color: Colors.grey[500],
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      event.dateFormatted,
-                      style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                    ),
-                    const SizedBox(width: 12),
-                    Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
-                    const SizedBox(width: 4),
-                    Text(
-                      event.time,
-                      style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.people_outline,
-                      size: 14,
-                      color: Colors.grey[500],
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${event.registeredCount} Registered',
-                      style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(width: 12),
-
-          // Register button
-          ElevatedButton(
-            onPressed: () {
-              context.read<CommunityProvider>().registerForEvent(event.id);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Successfully registered for event!'),
-                  backgroundColor: Color(0xFF10B981),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0066FF),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 0,
-            ),
-            child: const Text(
-              'Register',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
+                  const SizedBox(height: 4),
+                  Text(
+                    event.description,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today_outlined,
+                        size: 14,
+                        color: Colors.grey[500],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        event.dateFormatted,
+                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                      ),
+                      const SizedBox(width: 12),
+                      Icon(
+                        Icons.access_time,
+                        size: 14,
+                        color: Colors.grey[500],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        event.time,
+                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.people_outline,
+                        size: 14,
+                        color: Colors.grey[500],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${event.registeredCount} Registered',
+                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+
+            const SizedBox(width: 12),
+
+            // Register button
+            ElevatedButton(
+              onPressed: () {
+                context.read<CommunityProvider>().registerForEvent(event.id);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Successfully registered for event!'),
+                    backgroundColor: Color(0xFF10B981),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0066FF),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                'Register',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildSafeSpaceGuidelines() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFF0F4FF),
@@ -641,11 +658,10 @@ class _CommunityScreenState extends State<CommunityScreen>
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           _buildGuideline('Be Kind And Supportive'),
           _buildGuideline('Respect Privacy And Confidentiality'),
           _buildGuideline('No Medical Advice - Share Experiences Only'),
-          _buildGuideline('Moderated For Safety'),
         ],
       ),
     );
@@ -660,7 +676,7 @@ class _CommunityScreenState extends State<CommunityScreen>
           const Text(
             '• ',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               color: Color(0xFF0066FF),
               fontWeight: FontWeight.w600,
             ),
@@ -669,7 +685,7 @@ class _CommunityScreenState extends State<CommunityScreen>
             child: Text(
               text,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 color: Colors.grey[700],
                 height: 1.4,
               ),
@@ -696,6 +712,168 @@ class _CommunityScreenState extends State<CommunityScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showAllStories(BuildContext context) {
+    final provider = Provider.of<CommunityProvider>(context, listen: false);
+    final stories = provider.stories;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            child: Column(
+              children: [
+                // Custom Header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(
+                          Icons.arrow_back_ios_rounded,
+                          color: Colors.black,
+                          size: 22,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Text(
+                          'All Stories',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Stories List
+                Expanded(
+                  child: stories.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.article_outlined,
+                                size: 64,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No stories yet',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          itemCount: stories.length,
+                          itemBuilder: (context, index) {
+                            return _buildStoryCard(stories[index]);
+                          },
+                        ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAllEvents(BuildContext context) {
+    final provider = Provider.of<CommunityProvider>(context, listen: false);
+    final events = provider.events;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            child: Column(
+              children: [
+                // Custom Header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(
+                          Icons.arrow_back_ios_rounded,
+                          color: Colors.black,
+                          size: 22,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Text(
+                          'All Events',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Events List
+                Expanded(
+                  child: events.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.event_outlined,
+                                size: 64,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No events yet',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          itemCount: events.length,
+                          itemBuilder: (context, index) {
+                            return _buildEventCard(events[index]);
+                          },
+                        ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -22,6 +22,7 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
   late TextEditingController _phoneController;
   late TextEditingController _emailController;
   late TextEditingController _dobController;
+  List<TextEditingController> _teacherPhoneControllers = [];
   DateTime? _selectedDate;
   XFile? _selectedImage;
   Uint8List? _selectedImageBytes; // For web compatibility
@@ -61,6 +62,17 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
       // Load existing profile image URL
       _uploadedImageUrl = user.profileImageUrl;
 
+      // Load existing teacher phone numbers
+      _teacherPhoneControllers.clear();
+      if (user.teacherPhoneNumbers.isNotEmpty) {
+        for (var phone in user.teacherPhoneNumbers) {
+          _teacherPhoneControllers.add(TextEditingController(text: phone));
+        }
+      } else {
+        // Add at least one empty field
+        _teacherPhoneControllers.add(TextEditingController());
+      }
+
       setState(() {}); // Refresh UI
     }
   }
@@ -71,7 +83,27 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
     _phoneController.dispose();
     _emailController.dispose();
     _dobController.dispose();
+    for (var controller in _teacherPhoneControllers) {
+      controller.dispose();
+    }
     super.dispose();
+  }
+
+  void _addTeacherPhoneField() {
+    if (_teacherPhoneControllers.length < 5) {
+      setState(() {
+        _teacherPhoneControllers.add(TextEditingController());
+      });
+    }
+  }
+
+  void _removeTeacherPhoneField(int index) {
+    if (_teacherPhoneControllers.length > 1) {
+      setState(() {
+        _teacherPhoneControllers[index].dispose();
+        _teacherPhoneControllers.removeAt(index);
+      });
+    }
   }
 
   Future<void> _pickImage() async {
@@ -218,6 +250,10 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
             phoneNumber: _phoneController.text.trim(),
             dateOfBirth: _selectedDate,
             profileImageUrl: profileImageUrl ?? user.profileImageUrl,
+            teacherPhoneNumbers: _teacherPhoneControllers
+                .map((c) => c.text.trim())
+                .where((phone) => phone.isNotEmpty)
+                .toList(),
           );
 
           // Save to Firestore
@@ -543,9 +579,147 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
                         ],
                       ),
 
+                      const SizedBox(height: 20),
+
+                      // Teacher Phone Numbers Section
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.school_outlined,
+                                color: Colors.grey[600],
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Teacher Contact Numbers',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[700],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Tooltip(
+                                message:
+                                    'Teachers receive SMS alerts when child stress is high',
+                                child: Icon(
+                                  Icons.info_outline,
+                                  size: 16,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          ...List.generate(
+                            _teacherPhoneControllers.length,
+                            (index) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller:
+                                          _teacherPhoneControllers[index],
+                                      keyboardType: TextInputType.phone,
+                                      decoration: InputDecoration(
+                                        hintText: '+1234567890',
+                                        hintStyle: TextStyle(
+                                          color: Colors.grey[500],
+                                        ),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: Colors.grey[300]!,
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: Colors.grey[300]!,
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          borderSide: const BorderSide(
+                                            color: Color(0xFF0066FF),
+                                            width: 2,
+                                          ),
+                                        ),
+                                        filled: true,
+                                        fillColor: const Color.fromARGB(
+                                          113,
+                                          202,
+                                          214,
+                                          255,
+                                        ),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 16,
+                                            ),
+                                        prefixIcon: const Icon(
+                                          Icons.phone_outlined,
+                                          color: Color(0xFF0066FF),
+                                        ),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return null; // Optional
+                                        }
+                                        if (!value.startsWith('+')) {
+                                          return 'Include country code';
+                                        }
+                                        if (!RegExp(
+                                          r'^\+[0-9]{10,15}$',
+                                        ).hasMatch(value)) {
+                                          return 'Invalid format';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ),
+                                  if (_teacherPhoneControllers.length > 1)
+                                    IconButton(
+                                      onPressed: () =>
+                                          _removeTeacherPhoneField(index),
+                                      icon: const Icon(
+                                        Icons.remove_circle_outline,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          if (_teacherPhoneControllers.length < 5)
+                            TextButton.icon(
+                              onPressed: _addTeacherPhoneField,
+                              icon: const Icon(
+                                Icons.add_circle_outline,
+                                size: 20,
+                              ),
+                              label: const Text('Add Another Teacher'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: const Color(0xFF0066FF),
+                              ),
+                            ),
+                        ],
+                      ),
+
                       const SizedBox(height: 40),
 
-                      // Bouton Mettre à jour
                       // Bouton Mettre à jour
                       SizedBox(
                         width: 250,

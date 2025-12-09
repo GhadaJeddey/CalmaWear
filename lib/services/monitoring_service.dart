@@ -10,9 +10,15 @@ class MonitoringService {
 
   Timer? _monitoringTimer;
   bool _isMonitoring = false;
+  double _stressThreshold = 70.0; // Default threshold
 
   Stream<SensorData> get sensorDataStream => _sensorDataController.stream;
   Stream<Alert> get alertStream => _alertController.stream;
+
+  // Update stress threshold
+  void updateStressThreshold(double threshold) {
+    _stressThreshold = threshold;
+  }
 
   // Démarrer le monitoring simulé
   void startMonitoring() {
@@ -120,89 +126,23 @@ class MonitoringService {
 
   // Vérifier et déclencher les alertes
   void _checkForAlerts(SensorData data) {
-    final alerts = <Alert>[];
-
-    // Alerte rythme cardiaque élevé
-    if (data.heartRate > 100) {
-      alerts.add(
-        Alert(
-          id: 'hr_${data.timestamp.millisecondsSinceEpoch}',
-          type: AlertType.heartRate,
-          message: 'Rythme cardiaque élevé: ${data.heartRate.round()} BPM',
-          severity: data.heartRate > 120
-              ? AlertSeverity.high
-              : AlertSeverity.medium,
-          timestamp: data.timestamp,
-          sensorData: data,
-        ),
-      );
+    // Only send alerts if stress score is above threshold
+    if (data.stressScore <= _stressThreshold) {
+      return;
     }
 
-    // 👇 NOUVELLE ALERTE - Rythme respiratoire élevé
-    if (data.breathingRate > 35) {
-      alerts.add(
-        Alert(
-          id: 'br_${data.timestamp.millisecondsSinceEpoch}',
-          type: AlertType.breathing,
-          message: 'Respiration rapide: ${data.breathingRate.round()} resp/min',
-          severity: data.breathingRate > 40
-              ? AlertSeverity.high
-              : AlertSeverity.medium,
-          timestamp: data.timestamp,
-          sensorData: data,
-        ),
-      );
-    }
-
-    // Alerte température élevée
-    if (data.temperature > 37.8) {
-      alerts.add(
-        Alert(
-          id: 'temp_${data.timestamp.millisecondsSinceEpoch}',
-          type: AlertType.temperature,
-          message:
-              'Température élevée: ${data.temperature.toStringAsFixed(1)}°C',
-          severity: data.temperature > 38.0
-              ? AlertSeverity.high
-              : AlertSeverity.medium,
-          timestamp: data.timestamp,
-          sensorData: data,
-        ),
-      );
-    }
-
-    // Alerte stress élevé
+    // Only send stress alerts - no heart rate, breathing, temperature, or noise alerts
     if (data.stressScore > 70) {
-      alerts.add(
-        Alert(
-          id: 'stress_${data.timestamp.millisecondsSinceEpoch}',
-          type: AlertType.stress,
-          message: 'Niveau de stress élevé: ${data.stressScore.round()}%',
-          severity: data.stressScore > 85
-              ? AlertSeverity.high
-              : AlertSeverity.medium,
-          timestamp: data.timestamp,
-          sensorData: data,
-        ),
+      final alert = Alert(
+        id: 'stress_${data.timestamp.millisecondsSinceEpoch}',
+        type: AlertType.stress,
+        message: 'Niveau de stress élevé: ${data.stressScore.round()}%',
+        severity: data.stressScore > 85
+            ? AlertSeverity.high
+            : AlertSeverity.medium,
+        timestamp: data.timestamp,
+        sensorData: data,
       );
-    }
-
-    // Alerte bruit élevé
-    if (data.noiseLevel > 85) {
-      alerts.add(
-        Alert(
-          id: 'noise_${data.timestamp.millisecondsSinceEpoch}',
-          type: AlertType.noise,
-          message: 'Environnement bruyant: ${data.noiseLevel.round()} dB',
-          severity: AlertSeverity.medium,
-          timestamp: data.timestamp,
-          sensorData: data,
-        ),
-      );
-    }
-
-    // Émettre les alertes
-    for (final alert in alerts) {
       _alertController.add(alert);
     }
   }

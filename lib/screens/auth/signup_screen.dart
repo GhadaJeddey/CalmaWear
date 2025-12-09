@@ -18,6 +18,11 @@ class _SignupScreenState extends State<SignupScreen> {
   final _nameController = TextEditingController();
   final _childNameController = TextEditingController();
 
+  // Teacher contact controllers
+  final List<TextEditingController> _teacherPhoneControllers = [
+    TextEditingController(),
+  ];
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
@@ -29,7 +34,27 @@ class _SignupScreenState extends State<SignupScreen> {
     _confirmPasswordController.dispose();
     _nameController.dispose();
     _childNameController.dispose();
+    for (var controller in _teacherPhoneControllers) {
+      controller.dispose();
+    }
     super.dispose();
+  }
+
+  void _addTeacherPhoneField() {
+    if (_teacherPhoneControllers.length < 5) {
+      setState(() {
+        _teacherPhoneControllers.add(TextEditingController());
+      });
+    }
+  }
+
+  void _removeTeacherPhoneField(int index) {
+    if (_teacherPhoneControllers.length > 1) {
+      setState(() {
+        _teacherPhoneControllers[index].dispose();
+        _teacherPhoneControllers.removeAt(index);
+      });
+    }
   }
 
   Future<void> _signUp() async {
@@ -38,6 +63,12 @@ class _SignupScreenState extends State<SignupScreen> {
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
+      // Collect teacher phone numbers (non-empty ones)
+      final teacherPhoneNumbers = _teacherPhoneControllers
+          .map((c) => c.text.trim())
+          .where((phone) => phone.isNotEmpty)
+          .toList();
+
       final success = await authProvider.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text,
@@ -45,6 +76,9 @@ class _SignupScreenState extends State<SignupScreen> {
         childName: _childNameController.text.trim().isEmpty
             ? null
             : _childNameController.text.trim(),
+        teacherPhoneNumbers: teacherPhoneNumbers.isEmpty
+            ? null
+            : teacherPhoneNumbers,
       );
 
       if (mounted) {
@@ -271,6 +305,159 @@ class _SignupScreenState extends State<SignupScreen> {
                                   filled: true,
                                   fillColor: Colors.grey[50],
                                 ),
+                              ),
+
+                              const SizedBox(height: 16),
+
+                              // Teacher Phone Numbers Section
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Text(
+                                        'Teacher Contact Numbers',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          fontFamily: 'League Spartan',
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Tooltip(
+                                        message:
+                                            'Teachers will receive SMS alerts when child stress is high',
+                                        child: Icon(
+                                          Icons.info_outline,
+                                          size: 18,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    'Add phone numbers to send stress alerts via SMS',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontFamily: 'League Spartan',
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  ...List.generate(
+                                    _teacherPhoneControllers.length,
+                                    (index) => Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 12,
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: TextFormField(
+                                              controller:
+                                                  _teacherPhoneControllers[index],
+                                              decoration: InputDecoration(
+                                                labelText:
+                                                    'Teacher Phone ${index + 1}',
+                                                hintText: '+1234567890',
+                                                labelStyle: const TextStyle(
+                                                  fontFamily: 'League Spartan',
+                                                  color: Colors.black54,
+                                                ),
+                                                prefixIcon: const Icon(
+                                                  Icons.phone_outlined,
+                                                  color: Color(0xFF0066FF),
+                                                ),
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  borderSide: const BorderSide(
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
+                                                enabledBorder:
+                                                    OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                      borderSide:
+                                                          const BorderSide(
+                                                            color: Colors.grey,
+                                                          ),
+                                                    ),
+                                                focusedBorder:
+                                                    OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                      borderSide:
+                                                          const BorderSide(
+                                                            color: Color(
+                                                              0xFF0066FF,
+                                                            ),
+                                                            width: 2,
+                                                          ),
+                                                    ),
+                                                filled: true,
+                                                fillColor: Colors.grey[50],
+                                              ),
+                                              keyboardType: TextInputType.phone,
+                                              validator: (value) {
+                                                if (value == null ||
+                                                    value.isEmpty) {
+                                                  return null; // Optional field
+                                                }
+                                                if (!value.startsWith('+')) {
+                                                  return 'Include country code (e.g., +1234567890)';
+                                                }
+                                                if (!RegExp(
+                                                  r'^\+[0-9]{10,15}$',
+                                                ).hasMatch(value)) {
+                                                  return 'Invalid phone number format';
+                                                }
+                                                return null;
+                                              },
+                                            ),
+                                          ),
+                                          if (_teacherPhoneControllers.length >
+                                              1)
+                                            IconButton(
+                                              onPressed: () =>
+                                                  _removeTeacherPhoneField(
+                                                    index,
+                                                  ),
+                                              icon: const Icon(
+                                                Icons.remove_circle_outline,
+                                                color: Colors.red,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  if (_teacherPhoneControllers.length < 5)
+                                    TextButton.icon(
+                                      onPressed: _addTeacherPhoneField,
+                                      icon: const Icon(
+                                        Icons.add_circle_outline,
+                                      ),
+                                      label: const Text(
+                                        'Add Another Teacher',
+                                        style: TextStyle(
+                                          fontFamily: 'League Spartan',
+                                        ),
+                                      ),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: const Color(
+                                          0xFF0066FF,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
 
                               const SizedBox(height: 16),

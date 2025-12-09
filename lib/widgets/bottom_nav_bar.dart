@@ -58,6 +58,11 @@ class CustomBottomNavBar extends StatelessWidget {
               label: '',
             ),
             BottomNavigationBarItem(
+              icon: Icon(Icons.chat_bubble_outline),
+              activeIcon: Icon(Icons.chat_bubble),
+              label: '',
+            ),
+            BottomNavigationBarItem(
               icon: Icon(Icons.person_outlined),
               activeIcon: Icon(Icons.person),
               label: '',

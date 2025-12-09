@@ -468,7 +468,7 @@ class _MonitoringTestScreenState extends State<MonitoringTestScreen> {
       case AlertSeverity.high:
         return Colors.red;
       case AlertSeverity.critical:
-        return Colors.purple;
+        return const Color(0xFF1A237E); // Deep blue for critical alerts
     }
   }
 

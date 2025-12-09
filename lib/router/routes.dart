@@ -21,4 +21,12 @@ class Routes {
   static const parentProfile = '/parent-profile';
   static const childProfile = '/child-profile';
   static const testMonitoring = '/test-monitoring';
+
+  // Settings
+  static const settings = '/settings';
+  static const notificationSettings = '/notification-settings';
+  static const passwordManager = '/password-manager';
+  static const deleteAccount = '/delete-account';
+  static const privacyPolicy = '/privacy-policy';
+  static const help = '/help';
 }
