@@ -42,6 +42,7 @@ class AuthProvider with ChangeNotifier {
     required String email,
     required String password,
     required String name,
+    String? phoneNumber,
     String? childName,
     List<String>? teacherPhoneNumbers,
   }) async {
@@ -54,6 +55,7 @@ class AuthProvider with ChangeNotifier {
         email: email,
         password: password,
         name: name,
+        phoneNumber: phoneNumber,
         childName: childName,
         teacherPhoneNumbers: teacherPhoneNumbers,
       );

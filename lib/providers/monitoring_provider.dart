@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../services/realtime_sensor_service.dart';
+import '../services/vest_bluetooth_service.dart';
 import '../models/sensor_data.dart';
 import '../models/alert.dart';
 
@@ -17,6 +18,15 @@ class MonitoringProvider with ChangeNotifier {
   List<SensorData> get sensorHistory => List.unmodifiable(_sensorHistory);
   bool get isMonitoring => _isMonitoring;
   double get stressThreshold => _stressThreshold;
+
+  // Data source mode getters
+  SensorDataMode get dataSourceMode => _realtimeService.currentMode;
+  bool get isHardwareMode =>
+      _realtimeService.currentMode == SensorDataMode.HARDWARE_BLUETOOTH;
+  bool get isSyntheticMode =>
+      _realtimeService.currentMode == SensorDataMode.SYNTHETIC_DATA;
+  VestConnectionState get vestConnectionState =>
+      _realtimeService.vestConnectionState;
 
   // Initialiser le monitoring
   void initializeMonitoring() {
@@ -74,6 +84,20 @@ class MonitoringProvider with ChangeNotifier {
     _stressThreshold = newThreshold;
     _realtimeService.updateStressThreshold(newThreshold);
     notifyListeners();
+  }
+
+  // Switch data source mode (demo vs hardware)
+  Future<void> switchDataSourceMode(SensorDataMode newMode) async {
+    await _realtimeService.setDataSourceMode(newMode);
+    notifyListeners();
+  }
+
+  // Quick toggle between modes
+  Future<void> toggleDataSourceMode() async {
+    final newMode = dataSourceMode == SensorDataMode.SYNTHETIC_DATA
+        ? SensorDataMode.HARDWARE_BLUETOOTH
+        : SensorDataMode.SYNTHETIC_DATA;
+    await switchDataSourceMode(newMode);
   }
 
   // Obtenir l'historique des données pour les graphiques

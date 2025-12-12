@@ -135,6 +135,34 @@ class CommunityService {
     }
   }
 
+  /// Get stories by user ID
+  Future<List<CommunityStory>> getUserStories(String userId) async {
+    try {
+      print('CommunityService: Querying stories for authorId: $userId');
+      final snapshot = await _firestore
+          .collection('community_stories')
+          .where('authorId', isEqualTo: userId)
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      print(
+        'CommunityService: Query returned ${snapshot.docs.length} documents',
+      );
+      if (snapshot.docs.isNotEmpty) {
+        print(
+          'CommunityService: First doc authorId: ${snapshot.docs.first.data()['authorId']}',
+        );
+      }
+
+      return snapshot.docs
+          .map((doc) => CommunityStory.fromFirestore(doc.data(), doc.id))
+          .toList();
+    } catch (e) {
+      print('Error getting user stories: $e');
+      return [];
+    }
+  }
+
   /// Delete a story (only by author)
   Future<bool> deleteStory(String storyId) async {
     if (!isUserLoggedIn) return false;

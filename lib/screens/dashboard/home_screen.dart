@@ -8,11 +8,8 @@ import '../../providers/planner_provider.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../models/sensor_data.dart';
 import '../../models/alert.dart';
-import '../chat/chat_screen.dart';
-import '../planner/planner_screen.dart';
-import '../community/community_screen.dart';
-import '../profile/profile_screen.dart';
-import './notifications_screen.dart';
+import '../../services/realtime_sensor_service.dart';
+import '../../services/vest_bluetooth_service.dart';
 import 'dart:math' as math;
 import '../../router/routes.dart';
 
@@ -102,15 +99,11 @@ class _HomeScreenState extends State<HomeScreen>
     final stressScore =
         monitoringProvider.currentSensorData?.stressScore ?? 0.0;
 
-    // Show crisis popup if stress is above threshold
-    if (stressScore > 70 && !_showCrisisPopup) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        setState(() => _showCrisisPopup = true);
-      });
-    }
+    // Show crisis popup if stress is above threshold (only if not previously shown)
+    // Once closed by user, it won't reappear even if stress remains high
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Colors.grey[50],
       body: SafeArea(
         child: Stack(
           children: [
@@ -119,22 +112,38 @@ class _HomeScreenState extends State<HomeScreen>
                 _buildHeader(user?.name ?? 'User', user?.profileImageUrl),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 4),
                         _buildConnectedDevices(),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
                         _buildCurrentStatusCard(monitoringProvider),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
                         _buildLastTriggerCard(monitoringProvider),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
                         _buildVitalSignsSection(monitoringProvider),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
                         _buildWeeklyStressChart(monitoringProvider),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
                         _buildWeeklyHeartRateChart(monitoringProvider),
+                        const SizedBox(height: 24),
+                        _buildWeeklyBreathingChart(monitoringProvider),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildWeeklyMovementChart(
+                                monitoringProvider,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildWeeklyNoiseChart(monitoringProvider),
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 100),
                       ],
                     ),
@@ -155,75 +164,66 @@ class _HomeScreenState extends State<HomeScreen>
 
   Widget _buildHeader(String userName, String? profileImageUrl) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+      color: Colors.white,
       child: Row(
         children: [
           Container(
-            width: 50,
-            height: 50,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFF0066FF), width: 2),
-              image: profileImageUrl != null
-                  ? DecorationImage(
-                      image: NetworkImage(profileImageUrl),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
-            ),
-            child: profileImageUrl == null
-                ? ClipOval(
-                    child: Container(
-                      color: const Color(0xFFE3F2FD),
-                      child: const Icon(
-                        Icons.person,
-                        color: Color(0xFF0066FF),
-                        size: 28,
-                      ),
-                    ),
-                  )
-                : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Hi, Welcome Back',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-                Text(
-                  userName,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A1A),
-                  ),
+              gradient: LinearGradient(
+                colors: [Color(0xFF0066FF), Color(0xFF0066FF)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0xFF0066FF).withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
+            child: profileImageUrl != null
+                ? ClipOval(
+                    child: Image.network(profileImageUrl, fit: BoxFit.cover),
+                  )
+                : Center(
+                    child: Text(
+                      userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
           ),
+          const SizedBox(width: 12),
+          Text(
+            userName,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[800],
+            ),
+          ),
+          const Spacer(),
           Container(
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFFF0F4FF),
+              color: Color(0xFFCAD6FF).withOpacity(0.5),
             ),
             child: IconButton(
-              icon: const Icon(Icons.notifications_outlined),
-              color: const Color(0xFF0066FF),
+              icon: const Icon(Icons.notifications_outlined, size: 20),
+              color: const Color.fromARGB(255, 43, 43, 43),
+              padding: EdgeInsets.zero,
               onPressed: () {
-                context.pushNamed('notifications');
+                context.go('/notifications');
               },
             ),
           ),
@@ -235,24 +235,28 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildCurrentStatusCard(MonitoringProvider provider) {
     final sensorData = provider.currentSensorData;
     final stressScore = sensorData?.stressScore ?? 0.0;
+    // Invert stress score to calm score (low stress = high calm %)
+    final calmScore = 100.0 - stressScore;
     final statusText = _getStatusText(stressScore);
-    final statusColor = _getStatusColor(stressScore);
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFE8ECFF), Color.fromRGBO(255, 255, 255, 1)],
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+        ),
+        borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -260,8 +264,8 @@ class _HomeScreenState extends State<HomeScreen>
               const Text(
                 'Current\nStatus',
                 style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
                   color: Color(0xFF0066FF),
                   height: 1.2,
                 ),
@@ -269,63 +273,101 @@ class _HomeScreenState extends State<HomeScreen>
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
-                  vertical: 8,
+                  vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
+                  color: Color(0xFF10B981),
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(color: Colors.white.withOpacity(0.3)),
                 ),
                 child: const Text(
                   'Live',
                   style: TextStyle(
-                    color: Color(0xFF10B981),
-                    fontWeight: FontWeight.w700,
                     fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 30),
-          Center(
-            child: AnimatedBuilder(
-              animation: _pulseController,
-              builder: (context, child) {
-                return CustomPaint(
-                  size: const Size(200, 200),
-                  painter: ConcentricCirclesPainter(
-                    percentage: (100 - stressScore) / 100,
-                    animationValue: _pulseController.value,
-                    color: statusColor,
+          const SizedBox(height: 40),
+          // Oval progress indicator
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              // Outer decorative ovals
+              Container(
+                width: 280,
+                height: 320,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(140),
+                  border: Border.all(
+                    color: const Color(0xFF9BA9FF).withOpacity(0.3),
+                    width: 2,
                   ),
-                  child: SizedBox(
-                    width: 200,
-                    height: 200,
-                    child: Center(
-                      child: Text(
-                        '${(100 - stressScore).round()}%',
-                        style: const TextStyle(
-                          fontSize: 40,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF0066FF),
+                ),
+              ),
+              Container(
+                width: 240,
+                height: 280,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(120),
+                  border: Border.all(
+                    color: const Color(0xFF9BA9FF).withOpacity(0.6),
+                    width: 2,
+                  ),
+                ),
+              ),
+              Container(
+                width: 200,
+                height: 240,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(100),
+                  border: Border.all(
+                    color: const Color(0xFF9BA9FF).withOpacity(0.9),
+                    width: 2,
+                  ),
+                ),
+              ),
+              // Main progress oval
+              SizedBox(
+                width: 160,
+                height: 200,
+                child: CustomPaint(
+                  painter: OvalProgressPainter(
+                    percentage: calmScore / 100,
+                    color: const Color(0xFF9BA9FF).withOpacity(0.3),
+                    backgroundColor: Colors.transparent,
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${calmScore.round()}%',
+                          style: const TextStyle(
+                            fontSize: 48,
+                            fontWeight: FontWeight.w400,
+                            color: Color.fromARGB(255, 0, 0, 0),
+                            height: 1,
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 16),
+                        Text(
+                          statusText.toLowerCase(),
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: Color.fromARGB(255, 0, 0, 2),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 20),
-          Center(
-            child: Text(
-              statusText,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w600,
-                color: statusColor,
+                ),
               ),
-            ),
+            ],
           ),
         ],
       ),
@@ -346,20 +388,16 @@ class _HomeScreenState extends State<HomeScreen>
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.red.shade50, Colors.orange.shade50],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.red.shade200, width: 1.5),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Color(0xFFEF4444).withOpacity(0.2), width: 2),
         boxShadow: [
           BoxShadow(
-            color: Colors.red.withOpacity(0.15),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Color(0xFFEF4444).withOpacity(0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -368,19 +406,12 @@ class _HomeScreenState extends State<HomeScreen>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Color(0xFFEF4444).withOpacity(0.1),
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.red.withOpacity(0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
             ),
             child: Icon(
-              Icons.warning_rounded,
-              color: Colors.red.shade600,
+              Icons.warning_amber_rounded,
+              color: Color(0xFFEF4444),
               size: 28,
             ),
           ),
@@ -457,45 +488,60 @@ class _HomeScreenState extends State<HomeScreen>
     final sensorData = provider.currentSensorData;
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildVitalSignCard(
-          icon: Icons.favorite,
-          label: 'Heart Rate',
-          value: '${sensorData?.heartRate.round() ?? 0}',
-          unit: 'Bpm',
-          subValue: 'Avg: 94ms',
-          status: _getHeartRateStatus(sensorData?.heartRate ?? 0),
-          color: _getHeartRateColor(sensorData?.heartRate ?? 0),
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 16),
+          child: Text(
+            'Vital Signs',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Colors.grey[800],
+            ),
+          ),
         ),
-        const SizedBox(height: 12),
-        _buildVitalSignCard(
-          icon: Icons.air,
-          label: 'Breathing',
-          value: '${sensorData?.breathingRate.round() ?? 0}',
-          unit: 'Rpm',
-          subValue: 'Respiratory rate',
-          status: _getBreathingStatus(sensorData?.breathingRate ?? 0),
-          color: _getBreathingColor(sensorData?.breathingRate ?? 0),
-        ),
-        const SizedBox(height: 12),
-        _buildVitalSignCard(
-          icon: Icons.directions_walk,
-          label: 'Movement',
-          value: _getMovementLevel(sensorData?.motion ?? 0),
-          unit: '',
-          subValue: '${sensorData?.motion.round() ?? 0}% activity',
-          status: _getMovementStatus(sensorData?.motion ?? 0),
-          color: _getMovementColor(sensorData?.motion ?? 0),
-        ),
-        const SizedBox(height: 12),
-        _buildVitalSignCard(
-          icon: Icons.volume_up,
-          label: 'Noise',
-          value: '${sensorData?.noiseLevel.round() ?? 0}',
-          unit: 'dB',
-          subValue: 'Environment sound',
-          status: _getNoiseStatus(sensorData?.noiseLevel ?? 0),
-          color: _getNoiseColor(sensorData?.noiseLevel ?? 0),
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 1.5,
+          children: [
+            _buildVitalSignCard(
+              icon: Icons.favorite_rounded,
+              label: 'Heart Rate',
+              value: '${sensorData?.heartRate.round() ?? 0}',
+              unit: 'BPM',
+              status: _getHeartRateStatus(sensorData?.heartRate ?? 0),
+              color: Color(0xFF0066FF),
+            ),
+            _buildVitalSignCard(
+              icon: Icons.air_rounded,
+              label: 'Breathing',
+              value: '${sensorData?.breathingRate.round() ?? 0}',
+              unit: 'RPM',
+              status: _getBreathingStatus(sensorData?.breathingRate ?? 0),
+              color: Color(0xFF0066FF),
+            ),
+            _buildVitalSignCard(
+              icon: Icons.directions_walk_rounded,
+              label: 'Movement',
+              value: '${sensorData?.motion.round() ?? 0}',
+              unit: '%',
+              status: _getMovementStatus(sensorData?.motion ?? 0),
+              color: Color(0xFF0066FF),
+            ),
+            _buildVitalSignCard(
+              icon: Icons.volume_up_rounded,
+              label: 'Noise',
+              value: '${sensorData?.noiseLevel.round() ?? 0}',
+              unit: 'dB',
+              status: _getNoiseStatus(sensorData?.noiseLevel ?? 0),
+              color: Color(0xFF0066FF),
+            ),
+          ],
         ),
       ],
     );
@@ -506,7 +552,6 @@ class _HomeScreenState extends State<HomeScreen>
     required String label,
     required String value,
     required String unit,
-    required String subValue,
     required String status,
     required Color color,
   }) {
@@ -514,86 +559,88 @@ class _HomeScreenState extends State<HomeScreen>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: status == 'Normal'
+                      ? Color(0xFF10B981).withOpacity(0.1)
+                      : color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  status,
                   style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: status == 'Normal' ? Color(0xFF10B981) : color,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                  if (unit.isNotEmpty) ...[
+                    const SizedBox(width: 4),
                     Text(
-                      value,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1A1A1A),
+                      unit,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    if (unit.isNotEmpty) ...[
-                      const SizedBox(width: 4),
-                      Text(
-                        unit,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
                   ],
-                ),
-                Text(
-                  subValue,
-                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              status,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: color,
+                ],
               ),
-            ),
+            ],
           ),
         ],
       ),
@@ -605,15 +652,19 @@ class _HomeScreenState extends State<HomeScreen>
     final weeklyAlerts = _getWeeklyAlertCounts(provider.activeAlerts);
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: [Colors.white, Color(0xFFFFF5F5)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Color(0xFFEF4444).withOpacity(0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -623,12 +674,12 @@ class _HomeScreenState extends State<HomeScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Weekly Alerts',
+              Text(
+                'Crisis history',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF1A1A1A),
+                  color: Colors.grey[800],
                 ),
               ),
               Container(
@@ -675,15 +726,19 @@ class _HomeScreenState extends State<HomeScreen>
     final weeklyData = _getWeeklyAverages(provider.sensorHistory, false);
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFE8ECFF), Colors.white],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -693,12 +748,12 @@ class _HomeScreenState extends State<HomeScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Weekly Heart Rate',
+              Text(
+                'Heart Rate',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF1A1A1A),
+                  color: Colors.grey[800],
                 ),
               ),
               Container(
@@ -707,7 +762,7 @@ class _HomeScreenState extends State<HomeScreen>
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF3E0),
+                  color: Color(0xFFCAD6FF),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text(
@@ -715,7 +770,7 @@ class _HomeScreenState extends State<HomeScreen>
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFFFF9800),
+                    color: Color(0xFF0066FF),
                   ),
                 ),
               ),
@@ -727,16 +782,214 @@ class _HomeScreenState extends State<HomeScreen>
             child: CustomPaint(
               painter: LineChartPainter(
                 dataPoints: weeklyData,
-                color: const Color(0xFFFF9800),
+                color: const Color(0xFF0066FF),
                 maxValue: 140,
                 minValue: 60,
                 showGradient: true,
+                thresholdValue: 100,
               ),
               child: Container(),
             ),
           ),
           const SizedBox(height: 16),
           _buildWeekDayLabels(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeeklyBreathingChart(MonitoringProvider provider) {
+    // Get last 7 days of breathing data
+    final weeklyData = _getWeeklyBreathingAverages(provider.sensorHistory);
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFE8ECFF), Colors.white],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Breathing',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey[800],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Color(0xFFCAD6FF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  'RPM',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0066FF),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 200,
+            child: CustomPaint(
+              painter: LineChartPainter(
+                dataPoints: weeklyData,
+                color: const Color(0xFF0066FF),
+                maxValue: 45,
+                minValue: 15,
+                showGradient: true,
+                thresholdValue: 30,
+              ),
+              child: Container(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildWeekDayLabels(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeeklyMovementChart(MonitoringProvider provider) {
+    // Get last 7 days of maximum movement values
+    final weeklyMaxValues = _getWeeklyMaxValues(
+      provider.sensorHistory,
+      'motion',
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.white, Color(0xFFCAD6FF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFF0066FF).withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Movement',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 120,
+            child: CustomPaint(
+              painter: CompactBarChartPainter(
+                dataPoints: weeklyMaxValues,
+                color: const Color(0xFF0066FF),
+                maxValue: 100,
+                thresholdValue: 70,
+              ),
+              child: Container(),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildCompactWeekDayLabels(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeeklyNoiseChart(MonitoringProvider provider) {
+    // Get last 7 days of maximum noise values
+    final weeklyMaxValues = _getWeeklyMaxValues(
+      provider.sensorHistory,
+      'noise',
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.white, Color(0xFFCAD6FF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFF0066FF).withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Noise',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 120,
+            child: CustomPaint(
+              painter: CompactBarChartPainter(
+                dataPoints: weeklyMaxValues,
+                color: const Color(0xFF0066FF),
+                maxValue: 120,
+                thresholdValue: 80,
+              ),
+              child: Container(),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildCompactWeekDayLabels(),
         ],
       ),
     );
@@ -755,6 +1008,24 @@ class _HomeScreenState extends State<HomeScreen>
           style: TextStyle(
             fontSize: 12,
             color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildCompactWeekDayLabels() {
+    final days = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: List.generate(7, (index) {
+        return Text(
+          days[index],
+          style: TextStyle(
+            fontSize: 10,
+            color: Colors.grey[500],
             fontWeight: FontWeight.w500,
           ),
         );
@@ -817,30 +1088,97 @@ class _HomeScreenState extends State<HomeScreen>
     return weeklyCounts;
   }
 
+  List<double> _getWeeklyBreathingAverages(List<SensorData> history) {
+    final now = DateTime.now();
+    final weeklyAverages = List<double>.filled(7, 0.0);
+    final counts = List<int>.filled(7, 0);
+
+    // Group data by day of week (last 7 days)
+    for (final data in history) {
+      final daysDiff = now.difference(data.timestamp).inDays;
+      if (daysDiff < 7) {
+        final index = 6 - daysDiff;
+        weeklyAverages[index] += data.breathingRate;
+        counts[index]++;
+      }
+    }
+
+    // Calculate averages
+    for (int i = 0; i < 7; i++) {
+      if (counts[i] > 0) {
+        weeklyAverages[i] = weeklyAverages[i] / counts[i];
+      } else {
+        weeklyAverages[i] = 20 + math.Random().nextDouble() * 15;
+      }
+    }
+
+    return weeklyAverages;
+  }
+
+  List<double> _getWeeklyMaxValues(List<SensorData> history, String type) {
+    final now = DateTime.now();
+    final weeklyMaxValues = List<double>.filled(7, 0.0);
+
+    // Group data by day of week and find max (last 7 days)
+    for (final data in history) {
+      final daysDiff = now.difference(data.timestamp).inDays;
+      if (daysDiff < 7) {
+        final index = 6 - daysDiff;
+        final value = type == 'motion' ? data.motion : data.noiseLevel;
+        if (value > weeklyMaxValues[index]) {
+          weeklyMaxValues[index] = value;
+        }
+      }
+    }
+
+    // Fill empty days with mock data
+    for (int i = 0; i < 7; i++) {
+      if (weeklyMaxValues[i] == 0) {
+        if (type == 'motion') {
+          weeklyMaxValues[i] = 30 + math.Random().nextDouble() * 50;
+        } else {
+          weeklyMaxValues[i] = 40 + math.Random().nextDouble() * 50;
+        }
+      }
+    }
+
+    return weeklyMaxValues;
+  }
+
   Widget _buildConnectedDevices() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: [
+            Color.fromARGB(209, 180, 197, 254),
+            Color.fromARGB(174, 202, 214, 255),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Color(0xFF6B9FFF).withOpacity(0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            width: 60,
-            height: 60,
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF0066FF).withOpacity(0.1),
+              color: Colors.white.withOpacity(0.25),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(Icons.watch, color: Color(0xFF0066FF), size: 32),
+            child: const Icon(
+              Icons.sensors_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -852,13 +1190,16 @@ class _HomeScreenState extends State<HomeScreen>
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A1A),
+                    color: Color(0xFF0066FF),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Device • 10 minutes ago',
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  'Device • Active',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF0066FF).withOpacity(0.8),
+                  ),
                 ),
               ],
             ),
@@ -866,15 +1207,16 @@ class _HomeScreenState extends State<HomeScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFF10B981).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: Color(0xFF10B981).withOpacity(0.8),
+              borderRadius: BorderRadius.circular(25),
+              border: Border.all(color: Colors.white.withOpacity(0.3)),
             ),
             child: const Text(
               'Connected',
               style: TextStyle(
                 fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF10B981),
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
               ),
             ),
           ),
@@ -941,36 +1283,6 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
               const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Play relaxation sounds
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Playing relaxation sounds...'),
-                        backgroundColor: Color(0xFF0066FF),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0066FF),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Text(
-                    'SOS Button',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
               TextButton(
                 onPressed: () {
                   setState(() => _showCrisisPopup = false);
@@ -996,8 +1308,8 @@ class _HomeScreenState extends State<HomeScreen>
 
   Color _getStatusColor(double stressScore) {
     if (stressScore < 30) return const Color(0xFF10B981);
-    if (stressScore < 50) return const Color(0xFF3B82F6);
-    if (stressScore < 70) return const Color(0xFFF59E0B);
+    if (stressScore < 50) return const Color(0xFF0066FF);
+    if (stressScore < 70) return const Color(0xFF0066FF);
     return const Color(0xFFEF4444);
   }
 
@@ -1009,7 +1321,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   Color _getHeartRateColor(double hr) {
     if (hr > 100) return const Color(0xFFEF4444);
-    if (hr > 80) return const Color(0xFFF59E0B);
+    if (hr > 80) return const Color(0xFF0066FF);
     return const Color(0xFF10B981);
   }
 
@@ -1021,26 +1333,14 @@ class _HomeScreenState extends State<HomeScreen>
 
   Color _getBreathingColor(double br) {
     if (br > 35) return const Color(0xFFEF4444);
-    if (br > 25) return const Color(0xFFF59E0B);
+    if (br > 25) return const Color(0xFF0066FF);
     return const Color(0xFF10B981);
-  }
-
-  String _getMovementLevel(double motion) {
-    if (motion > 70) return 'High';
-    if (motion > 40) return 'Moderate';
-    return 'Low';
   }
 
   String _getMovementStatus(double motion) {
-    if (motion > 70) return 'Active';
-    if (motion > 40) return 'Moving';
-    return 'Resting';
-  }
-
-  Color _getMovementColor(double motion) {
-    if (motion > 70) return const Color(0xFFEF4444);
-    if (motion > 40) return const Color(0xFF3B82F6);
-    return const Color(0xFF10B981);
+    if (motion > 70) return 'High';
+    if (motion > 50) return 'Active';
+    return 'Normal';
   }
 
   String _getNoiseStatus(double noise) {
@@ -1051,7 +1351,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   Color _getNoiseColor(double noise) {
     if (noise > 80) return const Color(0xFFEF4444);
-    if (noise > 60) return const Color(0xFFF59E0B);
+    if (noise > 60) return const Color(0xFF0066FF);
     return const Color(0xFF10B981);
   }
 
@@ -1120,6 +1420,7 @@ class LineChartPainter extends CustomPainter {
   final double maxValue;
   final double minValue;
   final bool showGradient;
+  final double? thresholdValue;
 
   LineChartPainter({
     required this.dataPoints,
@@ -1127,6 +1428,7 @@ class LineChartPainter extends CustomPainter {
     this.maxValue = 100,
     this.minValue = 0,
     this.showGradient = false,
+    this.thresholdValue,
   });
 
   @override
@@ -1162,8 +1464,26 @@ class LineChartPainter extends CustomPainter {
       gradientPath.moveTo(points.first.dx, size.height);
       gradientPath.lineTo(points.first.dx, points.first.dy);
 
-      for (int i = 1; i < points.length; i++) {
-        gradientPath.lineTo(points[i].dx, points[i].dy);
+      // Create smooth curve for gradient
+      for (int i = 0; i < points.length - 1; i++) {
+        final current = points[i];
+        final next = points[i + 1];
+        final controlPoint1 = Offset(
+          current.dx + (next.dx - current.dx) / 2,
+          current.dy,
+        );
+        final controlPoint2 = Offset(
+          current.dx + (next.dx - current.dx) / 2,
+          next.dy,
+        );
+        gradientPath.cubicTo(
+          controlPoint1.dx,
+          controlPoint1.dy,
+          controlPoint2.dx,
+          controlPoint2.dy,
+          next.dx,
+          next.dy,
+        );
       }
 
       gradientPath.lineTo(points.last.dx, size.height);
@@ -1179,12 +1499,32 @@ class LineChartPainter extends CustomPainter {
       canvas.drawPath(gradientPath, gradientPaint);
     }
 
-    // Draw line
+    // Draw smooth curve line
     if (points.isNotEmpty) {
       path.moveTo(points.first.dx, points.first.dy);
-      for (int i = 1; i < points.length; i++) {
-        path.lineTo(points[i].dx, points[i].dy);
+
+      // Create smooth curve using cubic bezier
+      for (int i = 0; i < points.length - 1; i++) {
+        final current = points[i];
+        final next = points[i + 1];
+        final controlPoint1 = Offset(
+          current.dx + (next.dx - current.dx) / 2,
+          current.dy,
+        );
+        final controlPoint2 = Offset(
+          current.dx + (next.dx - current.dx) / 2,
+          next.dy,
+        );
+        path.cubicTo(
+          controlPoint1.dx,
+          controlPoint1.dy,
+          controlPoint2.dx,
+          controlPoint2.dy,
+          next.dx,
+          next.dy,
+        );
       }
+
       canvas.drawPath(path, paint);
     }
 
@@ -1210,6 +1550,31 @@ class LineChartPainter extends CustomPainter {
       final y = (size.height / 4) * i;
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
+
+    // Draw threshold line if provided
+    if (thresholdValue != null) {
+      final normalizedThreshold =
+          (thresholdValue! - minValue) / (maxValue - minValue);
+      final thresholdY = size.height - (normalizedThreshold * size.height);
+
+      final thresholdPaint = Paint()
+        ..color = Colors.red.withOpacity(0.5)
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke;
+
+      // Draw dashed line
+      const dashWidth = 5;
+      const dashSpace = 5;
+      double startX = 0;
+      while (startX < size.width) {
+        canvas.drawLine(
+          Offset(startX, thresholdY),
+          Offset(startX + dashWidth, thresholdY),
+          thresholdPaint,
+        );
+        startX += dashWidth + dashSpace;
+      }
+    }
   }
 
   @override
@@ -1226,11 +1591,13 @@ class BarChartPainter extends CustomPainter {
   final List<double> dataPoints;
   final Color color;
   final double maxValue;
+  final double? thresholdValue;
 
   BarChartPainter({
     required this.dataPoints,
     required this.color,
     required this.maxValue,
+    this.thresholdValue,
   });
 
   @override
@@ -1238,7 +1605,6 @@ class BarChartPainter extends CustomPainter {
     if (dataPoints.isEmpty || maxValue == 0) return;
 
     final barWidth = size.width / (dataPoints.length * 2);
-    final spacing = barWidth;
 
     // Draw grid lines
     final gridPaint = Paint()
@@ -1292,6 +1658,30 @@ class BarChartPainter extends CustomPainter {
         );
       }
     }
+
+    // Draw threshold line if provided
+    if (thresholdValue != null && maxValue > 0) {
+      final normalizedThreshold = thresholdValue! / maxValue;
+      final thresholdY = size.height - (normalizedThreshold * size.height);
+
+      final thresholdPaint = Paint()
+        ..color = Colors.red.withOpacity(0.5)
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke;
+
+      // Draw dashed line
+      const dashWidth = 5;
+      const dashSpace = 5;
+      double startX = 0;
+      while (startX < size.width) {
+        canvas.drawLine(
+          Offset(startX, thresholdY),
+          Offset(startX + dashWidth, thresholdY),
+          thresholdPaint,
+        );
+        startX += dashWidth + dashSpace;
+      }
+    }
   }
 
   @override
@@ -1299,5 +1689,197 @@ class BarChartPainter extends CustomPainter {
     return oldDelegate.dataPoints != dataPoints ||
         oldDelegate.color != color ||
         oldDelegate.maxValue != maxValue;
+  }
+}
+
+// Circular Progress Painter for Status Card
+class CircularProgressPainter extends CustomPainter {
+  final double percentage;
+  final Color color;
+  final Color backgroundColor;
+  final double strokeWidth;
+
+  CircularProgressPainter({
+    required this.percentage,
+    required this.color,
+    required this.backgroundColor,
+    this.strokeWidth = 12,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+
+    // Draw background circle
+    final backgroundPaint = Paint()
+      ..color = backgroundColor
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawCircle(center, radius, backgroundPaint);
+
+    // Draw progress arc
+    final progressPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [color, color.withOpacity(0.7)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromCircle(center: center, radius: radius))
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    const startAngle = -math.pi / 2;
+    final sweepAngle = 2 * math.pi * percentage;
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      startAngle,
+      sweepAngle,
+      false,
+      progressPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(CircularProgressPainter oldDelegate) {
+    return oldDelegate.percentage != percentage ||
+        oldDelegate.color != color ||
+        oldDelegate.backgroundColor != backgroundColor;
+  }
+}
+
+// Compact Bar Chart Painter for Movement and Noise
+class CompactBarChartPainter extends CustomPainter {
+  final List<double> dataPoints;
+  final Color color;
+  final double maxValue;
+  final double? thresholdValue;
+
+  CompactBarChartPainter({
+    required this.dataPoints,
+    required this.color,
+    required this.maxValue,
+    this.thresholdValue,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (dataPoints.isEmpty || maxValue == 0) return;
+
+    final barWidth = (size.width / dataPoints.length) * 0.6;
+    final spacing = (size.width / dataPoints.length);
+
+    // Draw bars
+    for (int i = 0; i < dataPoints.length; i++) {
+      final x = (i * spacing) + (spacing - barWidth) / 2;
+      final normalizedValue = dataPoints[i] / maxValue;
+      final barHeight =
+          normalizedValue * size.height * 0.85; // Use 85% of height
+      final y = size.height - barHeight;
+
+      // Bar with rounded corners
+      final barRect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(x, y, barWidth, barHeight),
+        const Radius.circular(6),
+      );
+
+      final barPaint = Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [color, color.withOpacity(0.6)],
+        ).createShader(Rect.fromLTWH(x, y, barWidth, barHeight));
+
+      canvas.drawRRect(barRect, barPaint);
+    }
+
+    // Draw threshold line if provided
+    if (thresholdValue != null && maxValue > 0) {
+      final normalizedThreshold = thresholdValue! / maxValue;
+      final thresholdY =
+          size.height - (normalizedThreshold * size.height * 0.85);
+
+      final thresholdPaint = Paint()
+        ..color = Colors.red.withOpacity(0.5)
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke;
+
+      // Draw dashed line
+      const dashWidth = 5;
+      const dashSpace = 5;
+      double startX = 0;
+      while (startX < size.width) {
+        canvas.drawLine(
+          Offset(startX, thresholdY),
+          Offset(startX + dashWidth, thresholdY),
+          thresholdPaint,
+        );
+        startX += dashWidth + dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(CompactBarChartPainter oldDelegate) {
+    return oldDelegate.dataPoints != dataPoints ||
+        oldDelegate.color != color ||
+        oldDelegate.maxValue != maxValue;
+  }
+}
+
+// Add this custom painter class at the end of your file with the other painters
+class OvalProgressPainter extends CustomPainter {
+  final double percentage;
+  final Color color;
+  final Color backgroundColor;
+
+  OvalProgressPainter({
+    required this.percentage,
+    required this.color,
+    required this.backgroundColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    final fillHeight = size.height * percentage;
+    final fillRect = Rect.fromLTWH(
+      0,
+      size.height - fillHeight,
+      size.width,
+      fillHeight,
+    );
+
+    // Draw the fill with clipping to create oval shape
+    canvas.save();
+    canvas.clipRRect(
+      RRect.fromRectAndRadius(rect, Radius.circular(size.width / 2)),
+    );
+
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRect(fillRect, paint);
+    canvas.restore();
+
+    // Draw the oval border
+    final borderPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3;
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, Radius.circular(size.width / 2)),
+      borderPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(OvalProgressPainter oldDelegate) {
+    return oldDelegate.percentage != percentage || oldDelegate.color != color;
   }
 }

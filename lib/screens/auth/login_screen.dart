@@ -172,15 +172,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Colors.grey,
-                                    ),
+                                    borderSide: BorderSide.none,
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Colors.grey,
-                                    ),
+                                    borderSide: BorderSide.none,
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -190,7 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                   filled: true,
-                                  fillColor: Colors.grey[50],
+                                  fillColor: const Color(0xFFECF1FF),
                                 ),
                                 keyboardType: TextInputType.emailAddress,
                                 validator: (value) {
@@ -236,15 +232,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Colors.grey,
-                                    ),
+                                    borderSide: BorderSide.none,
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Colors.grey,
-                                    ),
+                                    borderSide: BorderSide.none,
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -254,7 +246,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                   filled: true,
-                                  fillColor: Colors.grey[50],
+                                  fillColor: const Color(0xFFECF1FF),
                                 ),
                                 obscureText: _obscurePassword,
                                 validator: (value) {

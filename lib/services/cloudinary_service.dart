@@ -2,7 +2,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
@@ -18,8 +17,6 @@ class CloudinaryService {
   // URLs Cloudinary
   static String get _imageUploadUrl =>
       'https://api.cloudinary.com/v1_1/$_cloudName/image/upload';
-  static String get _audioUploadUrl =>
-      'https://api.cloudinary.com/v1_1/$_cloudName/video/upload';
 
   // Singleton pattern
   static final CloudinaryService _instance = CloudinaryService._internal();
@@ -84,86 +81,6 @@ class CloudinaryService {
       folder: 'calma_wear/stories',
       publicId: 'story_$id',
     );
-  }
-
-  // === UPLOAD AUDIO (VOICE MEMO) - Not supported on Web ===
-  Future<String?> uploadVoiceMemo(String audioFilePath, String userId) async {
-    if (kIsWeb) {
-      print('⚠️ Audio upload not supported on Web');
-      return null;
-    }
-
-    try {
-      print('🎤 Starting audio upload to Cloudinary...');
-
-      final timestamp = (DateTime.now().millisecondsSinceEpoch ~/ 1000)
-          .toString();
-      final folder = 'calma_wear/voice_memos';
-      final publicId =
-          'voice_${userId}_${DateTime.now().millisecondsSinceEpoch}';
-
-      // Generate signature
-      final params = {
-        'folder': folder,
-        'public_id': publicId,
-        'timestamp': timestamp,
-      };
-      final signature = _generateSignature(params);
-
-      var request = http.MultipartRequest('POST', Uri.parse(_audioUploadUrl));
-
-      request.fields['api_key'] = _apiKey;
-      request.fields['timestamp'] = timestamp;
-      request.fields['signature'] = signature;
-      request.fields['folder'] = folder;
-      request.fields['public_id'] = publicId;
-
-      final extension = audioFilePath.split('.').last.toLowerCase();
-      String contentType;
-      switch (extension) {
-        case 'm4a':
-          contentType = 'audio/m4a';
-          break;
-        case 'mp3':
-          contentType = 'audio/mpeg';
-          break;
-        case 'wav':
-          contentType = 'audio/wav';
-          break;
-        case 'aac':
-          contentType = 'audio/aac';
-          break;
-        default:
-          contentType = 'audio/mpeg';
-      }
-
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'file',
-          audioFilePath,
-          contentType: MediaType.parse(contentType),
-        ),
-      );
-
-      var response = await request.send();
-
-      if (response.statusCode == 200) {
-        final responseData = await response.stream.bytesToString();
-        final jsonResponse = jsonDecode(responseData);
-        final audioUrl = jsonResponse['secure_url'];
-        print('✅ Audio uploaded: $audioUrl');
-        return audioUrl;
-      } else {
-        final errorData = await response.stream.bytesToString();
-        print('❌ Audio upload error: ${response.statusCode}');
-        print('Details: $errorData');
-        return null;
-      }
-    } catch (e, stackTrace) {
-      print('❌ Audio upload exception: $e');
-      print('Stack: $stackTrace');
-      return null;
-    }
   }
 
   // === UPLOAD IMAGE FROM XFILE (Web compatible) ===

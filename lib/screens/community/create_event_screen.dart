@@ -373,7 +373,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     ),
                   ),
                   filled: true,
-                  fillColor: Colors.grey[50],
+                  fillColor: const Color(0xFFECF1FF),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -416,10 +416,10 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                             ),
                             child: Row(
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.calendar_today,
                                   size: 20,
-                                  color: Colors.grey[600],
+                                  color: Color(0xFF0066FF),
                                 ),
                                 const SizedBox(width: 12),
                                 Text(
@@ -470,10 +470,10 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                             ),
                             child: Row(
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.access_time,
                                   size: 20,
-                                  color: Colors.grey[600],
+                                  color: Color(0xFF0066FF),
                                 ),
                                 const SizedBox(width: 12),
                                 Text(
@@ -530,7 +530,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     ),
                   ),
                   filled: true,
-                  fillColor: Colors.grey[50],
+                  fillColor: const Color(0xFFECF1FF),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {

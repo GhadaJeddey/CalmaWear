@@ -356,6 +356,13 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xFF6B9FFF).withOpacity(0.3),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                         ),
                         child: Text(
                           percentage == 1.0
@@ -405,6 +412,13 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: const Color(0xFFF0F4FF),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0xFF6B9FFF).withOpacity(0.3),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
                 child: const Icon(
                   Icons.check_circle_outline,
@@ -658,7 +672,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       borderSide: const BorderSide(color: Color(0xFF0066FF)),
                     ),
                     filled: true,
-                    fillColor: const Color(0xFFF9FAFB),
+                    fillColor: const Color(0xFFECF1FF),
                     contentPadding: const EdgeInsets.all(16),
                   ),
                   maxLines: 3,
@@ -749,8 +763,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
           builder: (context, setState) {
             return Dialog(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(32),
               ),
+              backgroundColor: Colors.transparent,
               child: ConstrainedBox(
                 constraints: BoxConstraints(
                   maxWidth: 500,
@@ -758,8 +773,22 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 ),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color(0xFFE8ECFF),
+                        Color.fromRGBO(255, 255, 255, 1),
+                      ],
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                    ),
+                    borderRadius: BorderRadius.circular(32),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(24.0),
@@ -834,7 +863,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                       ),
                                     ),
                                     filled: true,
-                                    fillColor: const Color(0xFFF9FAFB),
+                                    fillColor: const Color(0xFFECF1FF),
                                     contentPadding: const EdgeInsets.symmetric(
                                       horizontal: 16,
                                       vertical: 16,
@@ -1212,26 +1241,56 @@ class _PlannerScreenState extends State<PlannerScreen> {
           builder: (context, setState) {
             return Dialog(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(32),
               ),
-              backgroundColor: const Color(0xFFE3F2FD),
+              backgroundColor: Colors.transparent,
               child: Container(
                 padding: const EdgeInsets.all(24),
                 width: MediaQuery.of(context).size.width * 0.9,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFFE8ECFF),
+                      Color.fromRGBO(255, 255, 255, 1),
+                    ],
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                  ),
+                  borderRadius: BorderRadius.circular(32),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.settings_outlined, color: Color(0xFF0066FF)),
-                        SizedBox(width: 12),
-                        Text(
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF0066FF),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.settings_outlined,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
                           'Configure Default Tasks',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFF0066FF),
+                            color: Color(0xFF1A1A1A),
                           ),
                         ),
                       ],

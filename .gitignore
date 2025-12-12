@@ -47,4 +47,4 @@ app.*.map.json
 /windows/flutter/ephemeral/
 
 # API keys and other sensitive files
-lib/config/keys.dart
+lib/config/env.dart

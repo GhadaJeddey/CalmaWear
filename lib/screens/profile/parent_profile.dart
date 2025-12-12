@@ -1,6 +1,6 @@
 // screens/profile/parent_profile_screen.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, Uint8List;
+import 'package:flutter/foundation.dart' show Uint8List;
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
@@ -551,12 +551,7 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
                                 ),
                               ),
                               filled: true,
-                              fillColor: const Color.fromARGB(
-                                113,
-                                202,
-                                214,
-                                255,
-                              ),
+                              fillColor: const Color(0xFFECF1FF),
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 16,
@@ -658,12 +653,7 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
                                           ),
                                         ),
                                         filled: true,
-                                        fillColor: const Color.fromARGB(
-                                          113,
-                                          202,
-                                          214,
-                                          255,
-                                        ),
+                                        fillColor: const Color(0xFFECF1FF),
                                         contentPadding:
                                             const EdgeInsets.symmetric(
                                               horizontal: 16,
@@ -815,7 +805,7 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
               borderSide: const BorderSide(color: Color(0xFF0066FF), width: 2),
             ),
             filled: true,
-            fillColor: const Color.fromARGB(113, 202, 214, 255),
+            fillColor: const Color(0xFFECF1FF),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 16,

@@ -135,44 +135,51 @@ class _CommunityScreenState extends State<CommunityScreen>
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () => context.go('/home'),
-            icon: const Icon(Icons.arrow_back_ios_rounded),
-            color: const Color(0xFF0066FF),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-          const SizedBox(width: 16),
           const Expanded(
             child: Text(
               'Community',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF0066FF),
+                color: Colors.black,
               ),
             ),
           ),
+          // My Stories Button
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFFE3F2FD),
-              borderRadius: BorderRadius.circular(12),
+              shape: BoxShape.circle,
+              color: const Color(0xFFF0F4FF),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                Text(
-                  'News',
-                  style: TextStyle(
-                    color: Color(0xFF0066FF),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(width: 4),
-                Text('🔥', style: TextStyle(fontSize: 12)),
-              ],
+            child: IconButton(
+              icon: const Icon(
+                Icons.article_outlined,
+                color: Color(0xFF0066FF),
+                size: 22,
+              ),
+              onPressed: () {
+                context.push('/profile/my-stories');
+              },
+              tooltip: 'My Stories',
+            ),
+          ),
+          // My Events Button
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFFF0F4FF),
+            ),
+            child: IconButton(
+              icon: const Icon(
+                Icons.event_outlined,
+                color: Color(0xFF0066FF),
+                size: 22,
+              ),
+              onPressed: () {
+                context.push('/profile/my-events');
+              },
+              tooltip: 'My Events',
             ),
           ),
         ],

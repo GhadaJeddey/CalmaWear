@@ -1,6 +1,7 @@
 // models/user.dart
 import '../utils/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class User {
   final String id;
@@ -20,7 +21,6 @@ class User {
   final String? childGender; // 'male', 'female', 'other'
   final String? childAge;
   final String? childProfileImageUrl;
-  final String? childVoiceMemoUrl; // Cloudinary URL for voice memo
   final List<ChildTrigger> childTriggers;
 
   final DateTime createdAt;
@@ -44,7 +44,6 @@ class User {
     this.childGender,
     this.childAge,
     this.childProfileImageUrl,
-    this.childVoiceMemoUrl,
     List<ChildTrigger>? childTriggers,
 
     required this.createdAt,
@@ -90,7 +89,6 @@ class User {
     String? childGender,
     String? childAge,
     String? childProfileImageUrl,
-    String? childVoiceMemoUrl,
     List<ChildTrigger>? childTriggers,
 
     DateTime? createdAt,
@@ -114,7 +112,6 @@ class User {
       childGender: childGender ?? this.childGender,
       childAge: childAge ?? this.childAge,
       childProfileImageUrl: childProfileImageUrl ?? this.childProfileImageUrl,
-      childVoiceMemoUrl: childVoiceMemoUrl ?? this.childVoiceMemoUrl,
       childTriggers: childTriggers ?? this.childTriggers,
 
       createdAt: createdAt ?? this.createdAt,
@@ -137,7 +134,6 @@ class User {
       'childGender': childGender,
       'childAge': childAge,
       'childProfileImageUrl': childProfileImageUrl,
-      'childVoiceMemoUrl': childVoiceMemoUrl,
       'childTriggers': childTriggers.map((t) => t.toMap()).toList(),
       'createdAt': createdAt.toIso8601String(),
       'stressThreshold': stressThreshold,
@@ -146,6 +142,14 @@ class User {
   }
 
   factory User.fromMap(Map<String, dynamic> map) {
+    // Helper function to parse dates from both Timestamp and String
+    DateTime? parseDate(dynamic value) {
+      if (value == null) return null;
+      if (value is Timestamp) return value.toDate();
+      if (value is String) return DateTime.tryParse(value);
+      return null;
+    }
+
     return User(
       id: map['id'],
       email: map['email'],
@@ -154,24 +158,19 @@ class User {
       teacherPhoneNumbers: map['teacherPhoneNumbers'] != null
           ? List<String>.from(map['teacherPhoneNumbers'])
           : null,
-      dateOfBirth: map['dateOfBirth'] != null
-          ? DateTime.parse(map['dateOfBirth'])
-          : null,
+      dateOfBirth: parseDate(map['dateOfBirth']),
       profileImageUrl: map['profileImageUrl'],
       childName: map['childName'],
-      childDateOfBirth: map['childDateOfBirth'] != null
-          ? DateTime.parse(map['childDateOfBirth'])
-          : null,
+      childDateOfBirth: parseDate(map['childDateOfBirth']),
       childGender: map['childGender'],
       childAge: map['childAge'],
       childProfileImageUrl: map['childProfileImageUrl'],
-      childVoiceMemoUrl: map['childVoiceMemoUrl'],
       childTriggers: map['childTriggers'] != null
           ? (map['childTriggers'] as List)
                 .map((t) => ChildTrigger.fromMap(t))
                 .toList()
           : null,
-      createdAt: DateTime.parse(map['createdAt']),
+      createdAt: parseDate(map['createdAt']) ?? DateTime.now(),
       stressThreshold:
           map['stressThreshold']?.toDouble() ??
           AppConstants.defaultStressThreshold,

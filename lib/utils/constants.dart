@@ -1,10 +1,13 @@
 class AppConstants {
-  // Couleurs de l'application
-  static const primaryColor = 0xFF4361EE;
-  static const secondaryColor = 0xFF3A0CA3;
-  static const accentColor = 0xFF7209B7;
-  static const successColor = 0xFF4CC9F0;
-  static const warningColor = 0xFFF72585;
+  // Modern color palette
+  static const primaryColor = 0xFF0066FF;
+  static const secondaryColor = 0xFF0066FF;
+  static const accentColor = 0xFF0066FF;
+  static const successColor = 0xFF10B981;
+  static const warningColor = 0xFF0066FF;
+  static const dangerColor = 0xFFEF4444;
+  static const lightBg = 0xFFCAD6FF;
+  static const cardBg = 0xFFFFFFFF;
 
   // Textes
   static const appName = 'CalmaWear';

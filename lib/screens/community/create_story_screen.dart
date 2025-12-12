@@ -179,7 +179,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                     ),
                   ),
                   filled: true,
-                  fillColor: Colors.grey[50],
+                  fillColor: const Color(0xFFECF1FF),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -227,7 +227,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                     ),
                   ),
                   filled: true,
-                  fillColor: Colors.grey[50],
+                  fillColor: const Color(0xFFECF1FF),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {

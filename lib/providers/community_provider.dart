@@ -126,6 +126,17 @@ class CommunityProvider with ChangeNotifier {
     }
   }
 
+  /// Get stories by user ID
+  Future<List<CommunityStory>> getUserStories(String userId) async {
+    try {
+      return await _service.getUserStories(userId);
+    } catch (e) {
+      _error = e.toString();
+      _safeNotifyListeners();
+      return [];
+    }
+  }
+
   /// Delete a story
   Future<bool> deleteStory(String storyId) async {
     try {
@@ -269,6 +280,21 @@ class CommunityProvider with ChangeNotifier {
       _isLoading = false;
       _safeNotifyListeners();
       return false;
+    }
+  }
+
+  /// Get events registered by user
+  Future<List<CommunityEvent>> getUserRegisteredEvents(String userId) async {
+    try {
+      // Filter events where user is registered
+      await loadEvents(); // Ensure events are loaded
+      return _events
+          .where((event) => event.registeredUsers.contains(userId))
+          .toList();
+    } catch (e) {
+      _error = e.toString();
+      _safeNotifyListeners();
+      return [];
     }
   }
 

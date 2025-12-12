@@ -108,54 +108,7 @@ class _NotificationSettingScreenState extends State<NotificationSettingScreen> {
                         },
                       ),
                     ),
-                  _buildSwitchTile(
-                    icon: Icons.calendar_today,
-                    title: 'Daily Reports',
-                    subtitle: 'Receive daily stress summary',
-                    value: _dailyReports,
-                    onChanged: (value) => setState(() => _dailyReports = value),
-                  ),
-                  if (_dailyReports)
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        left: 72,
-                        right: 16,
-                        bottom: 8,
-                      ),
-                      child: DropdownButtonFormField<String>(
-                        value: _dailyReportTime,
-                        decoration: InputDecoration(
-                          labelText: 'Report Time',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                        ),
-                        items:
-                            [
-                                  '8:00 AM',
-                                  '12:00 PM',
-                                  '6:00 PM',
-                                  '8:00 PM',
-                                  '10:00 PM',
-                                ]
-                                .map(
-                                  (time) => DropdownMenuItem(
-                                    value: time,
-                                    child: Text(time),
-                                  ),
-                                )
-                                .toList(),
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() => _dailyReportTime = value);
-                          }
-                        },
-                      ),
-                    ),
+
                   _buildSwitchTile(
                     icon: Icons.people,
                     title: 'Community Updates',

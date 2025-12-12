@@ -16,6 +16,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _childNameController = TextEditingController();
 
   // Teacher contact controllers
@@ -33,6 +34,7 @@ class _SignupScreenState extends State<SignupScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _nameController.dispose();
+    _phoneController.dispose();
     _childNameController.dispose();
     for (var controller in _teacherPhoneControllers) {
       controller.dispose();
@@ -73,6 +75,9 @@ class _SignupScreenState extends State<SignupScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
         name: _nameController.text.trim(),
+        phoneNumber: _phoneController.text.trim().isEmpty
+            ? null
+            : _phoneController.text.trim(),
         childName: _childNameController.text.trim().isEmpty
             ? null
             : _childNameController.text.trim(),
@@ -207,11 +212,65 @@ class _SignupScreenState extends State<SignupScreen> {
                                     ),
                                   ),
                                   filled: true,
-                                  fillColor: Colors.grey[50],
+                                  fillColor: const Color(0xFFECF1FF),
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
                                     return 'Please enter your name';
+                                  }
+                                  return null;
+                                },
+                              ),
+
+                              const SizedBox(height: 16),
+
+                              // Parent Phone Field (Optional)
+                              TextFormField(
+                                controller: _phoneController,
+                                decoration: InputDecoration(
+                                  labelText: 'Parent Phone (for alerts)',
+                                  labelStyle: const TextStyle(
+                                    fontFamily: 'League Spartan',
+                                    color: Colors.black54,
+                                  ),
+                                  prefixIcon: const Icon(
+                                    Icons.phone_outlined,
+                                    color: Color(0xFF0066FF),
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF0066FF),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  filled: true,
+                                  fillColor: const Color(0xFFECF1FF),
+                                  hintText: '+21612345678',
+                                ),
+                                keyboardType: TextInputType.phone,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return null; // optional
+                                  }
+                                  if (!value.startsWith('+')) {
+                                    return 'Include country code (e.g., +216...)';
+                                  }
+                                  final simple = RegExp(r'^\+[0-9]{8,15}$');
+                                  if (!simple.hasMatch(value)) {
+                                    return 'Invalid phone number format';
                                   }
                                   return null;
                                 },

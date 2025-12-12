@@ -177,69 +177,6 @@ class HelpScreen extends StatelessWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 16),
-
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0066FF).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: const Color(0xFF0066FF).withOpacity(0.3),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.chat_bubble_outline,
-                                color: const Color(0xFF0066FF),
-                                size: 24,
-                              ),
-                              const SizedBox(width: 12),
-                              const Text(
-                                'AI Assistant',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Chat with our AI assistant for quick help',
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Colors.grey[700],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.of(context).pushNamed('/chat');
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0066FF),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 12,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: const Text('Start Chat'),
-                          ),
-                        ],
-                      ),
-                    ),
-
                     const SizedBox(height: 32),
 
                     // App Version

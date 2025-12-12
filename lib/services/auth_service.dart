@@ -47,6 +47,7 @@ class AuthService {
     required String email,
     required String password,
     required String name,
+    String? phoneNumber,
     String? childName,
     List<String>? teacherPhoneNumbers,
   }) async {
@@ -61,12 +62,25 @@ class AuthService {
       await result.user!.updateDisplayName(name);
 
       // Créer le document utilisateur dans Firestore
+      // If a phone number was provided and teacher list contains the same single number,
+      // store it as parent phone and keep teachers empty.
+      final normalizedTeachers = (teacherPhoneNumbers ?? [])
+          .where((p) => p.isNotEmpty)
+          .toList();
+      final String? parentPhone =
+          phoneNumber ??
+          (normalizedTeachers.length == 1 ? normalizedTeachers.first : null);
+      final List<String> teachersToSave = parentPhone != null
+          ? normalizedTeachers.where((p) => p != parentPhone).toList()
+          : normalizedTeachers;
+
       await _firestore.collection('users').doc(result.user!.uid).set({
         'id': result.user!.uid,
         'email': email,
         'name': name,
+        'phoneNumber': parentPhone,
         'childName': childName,
-        'teacherPhoneNumbers': teacherPhoneNumbers ?? [],
+        'teacherPhoneNumbers': teachersToSave,
         'createdAt': Timestamp.now(),
         'stressThreshold': AppConstants.defaultStressThreshold,
         'notificationsEnabled': AppConstants.defaultNotificationsEnabled,
@@ -166,7 +180,6 @@ class AuthService {
           childGender: data['childGender'],
           childAge: data['childAge'],
           childProfileImageUrl: data['childProfileImageUrl'],
-          childVoiceMemoUrl: data['childVoiceMemoUrl'],
           childTriggers: parseTriggers(data['childTriggers']),
           createdAt: parseDate(data['createdAt']) ?? DateTime.now(),
           stressThreshold: data['stressThreshold']?.toDouble() ?? 70.0,
@@ -197,7 +210,6 @@ class AuthService {
         'childGender': updatedUser.childGender,
         'childAge': updatedUser.childAge,
         'childProfileImageUrl': updatedUser.childProfileImageUrl,
-        'childVoiceMemoUrl': updatedUser.childVoiceMemoUrl,
         'childTriggers': updatedUser.childTriggers
             .map((t) => t.toMap())
             .toList(),

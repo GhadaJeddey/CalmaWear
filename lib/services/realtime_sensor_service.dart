@@ -7,12 +7,20 @@ import '../models/sensor_data.dart';
 import '../models/alert.dart';
 import '../models/user.dart' as app_models;
 import 'sms_service.dart';
+import 'vest_bluetooth_service.dart';
+
+// Data source mode enum
+enum SensorDataMode {
+  SYNTHETIC_DATA, // Demo mode - generated data
+  HARDWARE_BLUETOOTH, // Production mode - BLE vest data
+}
 
 class RealtimeSensorService {
   final FirebaseDatabase _database = FirebaseDatabase.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final SmsService _smsService = SmsService();
+  final VestBluetoothService _vestService = VestBluetoothService();
 
   StreamController<SensorData> _sensorDataController =
       StreamController<SensorData>.broadcast();
@@ -21,22 +29,41 @@ class RealtimeSensorService {
 
   Timer? _generatorTimer;
   StreamSubscription? _databaseSubscription;
+  StreamSubscription? _vestDataSubscription;
   bool _isMonitoring = false;
   double _stressThreshold = 75.0;
   final Random _random = Random();
   DateTime? _lastAlertTime; // Track last SMS alert time
   app_models.User? _currentUser; // Cache user data for SMS
 
+  // Data source mode (default to synthetic for demonstration)
+  SensorDataMode _currentMode = SensorDataMode.SYNTHETIC_DATA;
+
   Stream<SensorData> get sensorDataStream => _sensorDataController.stream;
   Stream<Alert> get alertStream => _alertController.stream;
   bool get isMonitoring => _isMonitoring;
+  SensorDataMode get currentMode => _currentMode;
+  VestConnectionState get vestConnectionState => _vestService.connectionState;
 
   // Update stress threshold
   void updateStressThreshold(double threshold) {
     _stressThreshold = threshold;
   }
 
-  // Start real-time monitoring with synthetic data generation
+  // Switch data source mode
+  Future<void> setDataSourceMode(SensorDataMode mode) async {
+    if (_currentMode == mode) return;
+
+    // Stop current monitoring if active
+    if (_isMonitoring) {
+      await stopMonitoring();
+    }
+
+    _currentMode = mode;
+    print('Data source mode changed to: $mode');
+  }
+
+  // Start real-time monitoring (mode-aware)
   Future<void> startMonitoring() async {
     if (_isMonitoring) return;
 
@@ -51,16 +78,51 @@ class RealtimeSensorService {
     // Load user data for SMS alerts
     await _loadUserData(user.uid);
 
-    // Start generating and storing synthetic sensor data
+    if (_currentMode == SensorDataMode.SYNTHETIC_DATA) {
+      // DEMO MODE: Generate synthetic data
+      _startSyntheticDataGeneration(user.uid);
+    } else {
+      // HARDWARE MODE: Listen to BLE vest
+      await _startHardwareDataCollection(user.uid);
+    }
+
+    // Listen to real-time database updates for UI
+    _listenToSensorData(user.uid);
+  }
+
+  // Start synthetic data generation (demo mode)
+  void _startSyntheticDataGeneration(String userId) {
     _generatorTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
       final sensorData = _generateSyntheticSensorData();
 
       // Store in Firebase Realtime Database
-      await _storeSensorData(user.uid, sensorData);
+      await _storeSensorData(userId, sensorData);
     });
+  }
 
-    // Listen to real-time database updates
-    _listenToSensorData(user.uid);
+  // Start hardware data collection (production mode)
+  Future<void> _startHardwareDataCollection(String userId) async {
+    try {
+      // Connect to vest
+      await _vestService.startScanning();
+
+      // Listen to vest data stream
+      _vestDataSubscription = _vestService.sensorDataStream.listen((
+        sensorData,
+      ) async {
+        // Calculate stress score for hardware data
+        sensorData.stressScore = _calculateStressScore(sensorData);
+
+        // Store in Firebase Realtime Database
+        await _storeSensorData(userId, sensorData);
+      });
+    } catch (e) {
+      print('Error starting hardware data collection: $e');
+      // Fall back to synthetic data if hardware fails
+      print('Falling back to synthetic data mode');
+      _currentMode = SensorDataMode.SYNTHETIC_DATA;
+      _startSyntheticDataGeneration(userId);
+    }
   }
 
   // Load user data from Firestore for SMS alerts
@@ -79,6 +141,13 @@ class RealtimeSensorService {
   Future<void> stopMonitoring() async {
     _generatorTimer?.cancel();
     await _databaseSubscription?.cancel();
+    await _vestDataSubscription?.cancel();
+
+    // Disconnect vest if in hardware mode
+    if (_currentMode == SensorDataMode.HARDWARE_BLUETOOTH) {
+      await _vestService.disconnect();
+    }
+
     _isMonitoring = false;
   }
 

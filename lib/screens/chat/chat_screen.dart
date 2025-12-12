@@ -423,7 +423,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: isUser ? _primaryColor : Colors.grey[100],
+                    color: isUser ? const Color(0xFFCAD6FF) : Colors.grey[100],
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(18),
                       topRight: const Radius.circular(18),
@@ -432,7 +432,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: (isUser ? _primaryColor : Colors.grey)
+                        color: (isUser ? const Color(0xFFCAD6FF) : Colors.grey)
                             .withOpacity(0.15),
                         blurRadius: 6,
                         offset: const Offset(0, 2),

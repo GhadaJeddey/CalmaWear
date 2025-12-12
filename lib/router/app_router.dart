@@ -15,12 +15,10 @@ import '../screens/dashboard/notifications_screen.dart';
 import '../screens/chat/chat_history_screen.dart';
 import '../screens/profile/parent_profile.dart';
 import '../screens/profile/child_profile.dart';
-import '../screens/profile/settings/settings_screen.dart';
-import '../screens/profile/settings/notification_settings_screen.dart';
-import '../screens/profile/settings/password_manager_screen.dart';
-import '../screens/profile/settings/delete_account_screen.dart';
-import '../screens/profile/privacy_policy_screen.dart';
+import '../screens/profile/my_stories_screen.dart';
+import '../screens/profile/my_events_screen.dart';
 import '../screens/profile/help_screen.dart';
+import '../screens/profile/privacy_policy_screen.dart';
 import '../screens/test/monitoring_test_screen.dart';
 
 // Navigator keys
@@ -163,6 +161,16 @@ final goRouter = GoRouter(
                   builder: (context, state) => const ChildProfileScreen(),
                 ),
                 GoRoute(
+                  path: 'my-stories',
+                  name: 'my-stories',
+                  builder: (context, state) => const MyStoriesScreen(),
+                ),
+                GoRoute(
+                  path: 'my-events',
+                  name: 'my-events',
+                  builder: (context, state) => const MyEventsScreen(),
+                ),
+                GoRoute(
                   path: 'privacy-policy',
                   name: 'privacy-policy',
                   builder: (context, state) => const PrivacyPolicyScreen(),
@@ -171,30 +179,6 @@ final goRouter = GoRouter(
                   path: 'help',
                   name: 'help',
                   builder: (context, state) => const HelpScreen(),
-                ),
-                GoRoute(
-                  path: 'settings',
-                  name: 'settings',
-                  builder: (context, state) => const SettingsScreen(),
-                  routes: [
-                    GoRoute(
-                      path: 'notifications',
-                      name: 'notification-settings',
-                      builder: (context, state) =>
-                          const NotificationSettingScreen(),
-                    ),
-                    GoRoute(
-                      path: 'password',
-                      name: 'password-manager',
-                      builder: (context, state) =>
-                          const PasswordManagerScreen(),
-                    ),
-                    GoRoute(
-                      path: 'delete',
-                      name: 'delete-account',
-                      builder: (context, state) => const DeleteAccountScreen(),
-                    ),
-                  ],
                 ),
               ],
             ),

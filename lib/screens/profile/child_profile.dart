@@ -1,18 +1,9 @@
-// First, add these dependencies to your pubspec.yaml:
-// dependencies:
-//   record: ^5.0.0
-//   path_provider: ^2.1.0
-//   audioplayers: ^5.2.0
-
 // screens/profile/child_profile.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, Uint8List;
+import 'package:flutter/foundation.dart' show Uint8List;
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:record/record.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:audioplayers/audioplayers.dart';
 import '../../models/user.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/cloudinary_service.dart';
@@ -31,8 +22,6 @@ class ChildProfileScreen extends StatefulWidget {
 class _ChildProfileScreenState extends State<ChildProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final ImagePicker _imagePicker = ImagePicker();
-  final AudioRecorder _audioRecorder = AudioRecorder();
-  final AudioPlayer _audioPlayer = AudioPlayer();
   final CloudinaryService _cloudinaryService = CloudinaryService();
 
   late TextEditingController _nameController;
@@ -41,18 +30,10 @@ class _ChildProfileScreenState extends State<ChildProfileScreen> {
   String? _selectedGender;
   bool _isLoading = false;
   bool _isUploadingImage = false;
-  bool _isUploadingAudio = false;
   XFile? _selectedImage;
   Uint8List? _selectedImageBytes; // For web compatibility
   String? _uploadedImageUrl; // Store uploaded image URL
   List<ChildTrigger> _triggers = [];
-
-  // Voice memo related
-  bool _isRecording = false;
-  bool _isPlaying = false;
-  String? _voiceMemoPath; // Local file path
-  String? _voiceMemoUrl; // Cloudinary URL
-  Duration _recordDuration = Duration.zero;
 
   final List<ChildTrigger> _availableTriggers = [
     ChildTrigger(name: 'Noise', intensity: 0, icon: Icons.volume_up),
@@ -122,9 +103,6 @@ class _ChildProfileScreenState extends State<ChildProfileScreen> {
       // Load existing child profile image URL
       _uploadedImageUrl = user.childProfileImageUrl;
 
-      // Load existing voice memo URL
-      _voiceMemoUrl = user.childVoiceMemoUrl;
-
       setState(() {}); // Refresh UI
     }
   }
@@ -133,118 +111,7 @@ class _ChildProfileScreenState extends State<ChildProfileScreen> {
   void dispose() {
     _nameController.dispose();
     _dobController.dispose();
-    _audioRecorder.dispose();
-    _audioPlayer.dispose();
     super.dispose();
-  }
-
-  Future<void> _startRecording() async {
-    try {
-      if (await _audioRecorder.hasPermission()) {
-        final directory = await getApplicationDocumentsDirectory();
-        final path =
-            '${directory.path}/voice_memo_${DateTime.now().millisecondsSinceEpoch}.m4a';
-
-        await _audioRecorder.start(const RecordConfig(), path: path);
-
-        setState(() {
-          _isRecording = true;
-          _recordDuration = Duration.zero;
-        });
-
-        // Update duration
-        Future.doWhile(() async {
-          await Future.delayed(const Duration(seconds: 1));
-          if (_isRecording) {
-            setState(() {
-              _recordDuration += const Duration(seconds: 1);
-            });
-            return true;
-          }
-          return false;
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error starting recording: $e')));
-    }
-  }
-
-  Future<void> _stopRecording() async {
-    try {
-      final path = await _audioRecorder.stop();
-      setState(() {
-        _isRecording = false;
-        _voiceMemoPath = path;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Voice memo recorded successfully!'),
-          backgroundColor: Color(0xFF10B981),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error stopping recording: $e')));
-    }
-  }
-
-  Future<void> _playVoiceMemo() async {
-    if (_voiceMemoPath == null && _voiceMemoUrl == null) return;
-
-    try {
-      setState(() => _isPlaying = true);
-
-      // Play from URL if available (works on web), otherwise from local path
-      if (_voiceMemoUrl != null) {
-        await _audioPlayer.play(UrlSource(_voiceMemoUrl!));
-      } else if (_voiceMemoPath != null) {
-        await _audioPlayer.play(DeviceFileSource(_voiceMemoPath!));
-      }
-
-      _audioPlayer.onPlayerComplete.listen((event) {
-        setState(() => _isPlaying = false);
-      });
-    } catch (e) {
-      setState(() => _isPlaying = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error playing audio: $e')));
-    }
-  }
-
-  Future<void> _stopPlaying() async {
-    await _audioPlayer.stop();
-    setState(() => _isPlaying = false);
-  }
-
-  Future<void> _deleteVoiceMemo() async {
-    if (_voiceMemoPath != null) {
-      try {
-        // On web, we can't delete files, just clear the path
-        setState(() => _voiceMemoPath = null);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Voice memo deleted'),
-            backgroundColor: Color(0xFFEF4444),
-          ),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error deleting voice memo: $e')),
-        );
-      }
-    }
-  }
-
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
-    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
-    return "$twoDigitMinutes:$twoDigitSeconds";
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -584,29 +451,6 @@ class _ChildProfileScreenState extends State<ChildProfileScreen> {
             }
           }
 
-          // Upload voice memo to Cloudinary if recorded
-          String? voiceMemoUrl;
-          if (_voiceMemoPath != null) {
-            setState(() => _isUploadingAudio = true);
-            voiceMemoUrl = await _cloudinaryService.uploadVoiceMemo(
-              _voiceMemoPath!,
-              user.id,
-            );
-            setState(() => _isUploadingAudio = false);
-
-            if (voiceMemoUrl == null && mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Failed to upload voice memo, but profile will be saved',
-                  ),
-                  backgroundColor: Colors.orange,
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            }
-          }
-
           final updatedUser = user.copyWith(
             childName: _nameController.text.trim(),
             childDateOfBirth: _selectedDate,
@@ -800,186 +644,6 @@ class _ChildProfileScreenState extends State<ChildProfileScreen> {
                 ),
               ),
 
-              // Voice Memo Section
-              Container(
-                margin: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 16,
-                ),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      const Color(0xFF0066FF).withOpacity(0.1),
-                      const Color(0xFF0080FF).withOpacity(0.05),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: const Color(0xFF0066FF).withOpacity(0.2),
-                    width: 2,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0066FF),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.mic,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Parent Voice Memo',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF0066FF),
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Record a calming message for your child',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    if (_isRecording)
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.red.shade200),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 12,
-                              height: 12,
-                              decoration: const BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Recording... ${_formatDuration(_recordDuration)}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.red,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                    if ((_voiceMemoPath != null || _voiceMemoUrl != null) &&
-                        !_isRecording)
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.green.shade200),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.check_circle,
-                              color: Color(0xFF10B981),
-                              size: 24,
-                            ),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Text(
-                                'Voice memo recorded',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF10B981),
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: _isPlaying
-                                  ? _stopPlaying
-                                  : _playVoiceMemo,
-                              icon: Icon(
-                                _isPlaying ? Icons.stop : Icons.play_arrow,
-                                color: const Color(0xFF0066FF),
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: _deleteVoiceMemo,
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                    const SizedBox(height: 16),
-
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _isRecording
-                            ? _stopRecording
-                            : _startRecording,
-                        icon: Icon(
-                          _isRecording ? Icons.stop : Icons.mic,
-                          size: 24,
-                        ),
-                        label: Text(
-                          _isRecording ? 'Stop Recording' : 'Start Recording',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _isRecording
-                              ? Colors.red
-                              : const Color(0xFF0066FF),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
               // Form fields
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -1055,12 +719,7 @@ class _ChildProfileScreenState extends State<ChildProfileScreen> {
                                 ),
                               ),
                               filled: true,
-                              fillColor: const Color.fromARGB(
-                                113,
-                                202,
-                                214,
-                                255,
-                              ),
+                              fillColor: const Color(0xFFECF1FF),
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 16,
@@ -1135,12 +794,7 @@ class _ChildProfileScreenState extends State<ChildProfileScreen> {
                                 ),
                               ),
                               filled: true,
-                              fillColor: const Color.fromARGB(
-                                113,
-                                202,
-                                214,
-                                255,
-                              ),
+                              fillColor: const Color(0xFFECF1FF),
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 16,
@@ -1493,7 +1147,7 @@ class _ChildProfileScreenState extends State<ChildProfileScreen> {
               borderSide: const BorderSide(color: Color(0xFF0066FF), width: 2),
             ),
             filled: true,
-            fillColor: const Color.fromARGB(113, 202, 214, 255),
+            fillColor: const Color(0xFFECF1FF),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 16,

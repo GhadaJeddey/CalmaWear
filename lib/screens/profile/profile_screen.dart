@@ -142,14 +142,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       },
                     ),
 
-                    // Settings
+                    // My Stories
                     _buildProfileOption(
-                      icon: Icons.settings_outlined,
-                      title: 'Settings',
-                      subtitle: 'App preferences & notifications',
+                      icon: Icons.article_outlined,
+                      title: 'My Stories',
+                      subtitle: 'View your posted stories',
                       iconColor: const Color(0xFF0066FF),
                       onTap: () {
-                        context.push('/profile/settings');
+                        context.push('/profile/my-stories');
+                      },
+                    ),
+
+                    // My Events
+                    _buildProfileOption(
+                      icon: Icons.event_outlined,
+                      title: 'My Events',
+                      subtitle: 'View registered events',
+                      iconColor: const Color(0xFF0066FF),
+                      onTap: () {
+                        context.push('/profile/my-events');
                       },
                     ),
 
