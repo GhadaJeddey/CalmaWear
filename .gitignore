@@ -48,3 +48,4 @@ app.*.map.json
 
 # API keys and other sensitive files
 lib/config/env.dart
+lib/config/keys.dart
