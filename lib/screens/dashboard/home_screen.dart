@@ -150,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen>
         });
       }
     } catch (e) {
-      print('❌ Error loading weekly stats: $e');
+      print('Error loading weekly stats: $e');
       if (mounted) {
         setState(() => _isLoadingWeeklyData = false);
       }
@@ -175,13 +175,13 @@ class _HomeScreenState extends State<HomeScreen>
       _popupBlockerTimer = Timer(const Duration(minutes: 5), () {
         if (mounted) {
           setState(() {
-            _showCrisisPopup = true; // Show popup again after 5 minutes
-            _popupBlockerTimer = null; // Reset timer for next alert
+            _showCrisisPopup = true;
+            _popupBlockerTimer = null;
           });
         }
       });
 
-      print('🚨 Alert detected - Hiding popup for 5 minutes');
+      print('Alert detected - Hiding popup for 5 minutes');
     }
 
     return Scaffold(
