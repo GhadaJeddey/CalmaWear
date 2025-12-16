@@ -3,6 +3,7 @@ import '../services/realtime_sensor_service.dart';
 import '../services/vest_bluetooth_service.dart';
 import '../models/sensor_data.dart';
 import '../models/alert.dart';
+import '../services/weekly_stats_service.dart';
 
 class MonitoringProvider with ChangeNotifier {
   final RealtimeSensorService _realtimeService = RealtimeSensorService();
@@ -12,6 +13,7 @@ class MonitoringProvider with ChangeNotifier {
   List<SensorData> _sensorHistory = [];
   bool _isMonitoring = false;
   double _stressThreshold = 70.0;
+  late WeeklyStatsService _weeklyStatsService;
 
   SensorData? get currentSensorData => _currentSensorData;
   List<Alert> get activeAlerts => List.unmodifiable(_activeAlerts);
@@ -30,6 +32,7 @@ class MonitoringProvider with ChangeNotifier {
 
   // Initialiser le monitoring
   void initializeMonitoring() {
+    _weeklyStatsService = WeeklyStatsService();
     // Set initial threshold in service
     _realtimeService.updateStressThreshold(_stressThreshold);
 
@@ -83,6 +86,17 @@ class MonitoringProvider with ChangeNotifier {
   void updateStressThreshold(double newThreshold) {
     _stressThreshold = newThreshold;
     _realtimeService.updateStressThreshold(newThreshold);
+    notifyListeners();
+  }
+
+  void updateSensorData(SensorData data) {
+    _currentSensorData = data;
+
+    // Save alert if stress is high
+    if (data.stressScore > 75) {
+      _weeklyStatsService.saveStressAlert(data.stressScore);
+    }
+
     notifyListeners();
   }
 

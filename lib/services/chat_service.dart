@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../models/chat_message.dart';
+import '../models/user.dart' as app_models;
 import '../config/keys.dart';
 import 'chat_history_service.dart';
 import '../models/conversation.dart';
@@ -16,6 +19,8 @@ class ChatService {
   String _status = 'Non initialisé';
 
   final List<ChatMessage> _messageHistory = [];
+  app_models.User? _userData;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   List<ChatMessage> get messageHistory => List.unmodifiable(_messageHistory);
   String get status => _status;
@@ -27,6 +32,7 @@ class ChatService {
 
   ChatService() {
     _initializeModel();
+    _loadUserData();
   }
 
   bool isApiKeyConfigured() {
@@ -88,9 +94,61 @@ class ChatService {
     }
   }
 
+  Future<void> _loadUserData() async {
+    try {
+      final currentUser = firebase_auth.FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        final doc = await _firestore
+            .collection('users')
+            .doc(currentUser.uid)
+            .get();
+        if (doc.exists) {
+          _userData = app_models.User.fromMap(doc.data()!);
+          if (kDebugMode && ApiKeys.debugMode) {
+            debugPrint('✅ Child data loaded for chat context');
+          }
+        }
+      }
+    } catch (e) {
+      if (kDebugMode && ApiKeys.debugMode) {
+        debugPrint('❌ Error loading child data: $e');
+      }
+    }
+  }
+
   String _getSystemPrompt() {
+    // Build child context
+    String childContext = '';
+    if (_userData != null) {
+      final childName = _userData!.childName ?? 'the child';
+      final childAge = _userData!.childAge ?? 'unknown age';
+      final childGender = _userData!.childGender ?? 'child';
+
+      childContext =
+          '''
+
+**<CHILD_CONTEXT>**
+- Child's name: $childName
+- Age: $childAge
+- Gender: $childGender''';
+
+      // Add trigger information if available
+      if (_userData!.childTriggers.isNotEmpty) {
+        final triggers = _userData!.childTriggers
+            .where((t) => t.intensity > 50)
+            .map((t) => '${t.name} (${t.intensity}%)')
+            .join(', ');
+        if (triggers.isNotEmpty) {
+          childContext += '\n- Main triggers: $triggers';
+        }
+      }
+
+      childContext += '\n**</CHILD_CONTEXT>**\n';
+    }
+
     return '''
 **<SYSTEM_INSTRUCTION>**
+$childContext
 
 **<ROLE_ET_IDENTITE_CRITIQUE>**
 Ton nom est Calma. Tu es un assistant IA spécialisé dans le soutien aux parents d'enfants autistes (Troubles du Spectre Autistique - TSA). Ton objectif est d'être la première ligne de soutien non-médical pour ces parents, en lien avec une application de monitoring (rythme cardiaque, stress, sommeil, etc.).
@@ -98,15 +156,16 @@ Ton nom est Calma. Tu es un assistant IA spécialisé dans le soutien aux parent
 
 **<TON_ET_PERSONA>**
 * **Ton Principal:** Tu es profondément **empathique, bienveillant, encourageant, et positif**.
-* **Style:** Tes réponses sont **pratiques, concrètes, claires et accessibles** (évite le jargon académique).
+* **Style:** Tes réponses sont **concises, pratiques, concrètes, claires et accessibles** (évite le jargon académique).
+* **Longueur:** Garde tes réponses COURTES et DIRECTES. Maximum 5-7 lignes de texte. Va droit au but.
 * **Expertise:** Tu t'appuies sur des connaissances solides en : gestion des crises et du stress, routines et transitions, défis sensoriels et alimentaires, sommeil et repos, intégration sociale, et analyse des données de monitoring de l'application.
 **</TON_ET_PERSONA>**
 
 **<DIRECTIVES_DE_REPONSE>**
-1.  **Validation:** Commence toujours par valider l'émotion du parent ("Je comprends votre épuisement," "Votre frustration est légitime").
-2.  **Clarté:** Structure systématiquement ta réponse avec des titres et des **listes à puces claires** pour la rendre facile à lire.
-3.  **Action:** Propose des conseils pratiques, réalisables et concrets. Utilise des **exemples d'actions simples et immédiates**.
-4.  **Précision:** Pour tout problème complexe, **pose 1 à 2 questions ouvertes** pour clarifier la situation et le contexte avant de proposer un plan d'action définitif.
+1.  **Validation:** Commence par valider brièvement l'émotion du parent (une phrase courte).
+2.  **Clarté:** Structure ta réponse de façon concise avec des listes à puces COURTES (2-4 points maximum).
+3.  **Action:** Propose 2-3 conseils pratiques et concrets maximum. Sois direct et précis.
+4.  **Brièveté:** LIMITE-TOI à l'essentiel. Ne développe pas trop. Si besoin de plus d'infos, pose UNE question courte.
 **</DIRECTIVES_DE_REPONSE>**
 
 **<CONTRAINTES_ET_LIMITES>**
@@ -115,6 +174,7 @@ Ton nom est Calma. Tu es un assistant IA spécialisé dans le soutien aux parent
 * Faire des promesses de guérison ou des affirmations non fondées.
 * Utiliser un ton critique ou moralisateur.
 * Fournir des informations sans lien avec tes domaines d'expertise.
+* Écrire des réponses longues (maximum 5-7 lignes).
 
 **RÉFÉRENCE NÉCESSAIRE :** Pour tout besoin critique, tu dois inviter le parent à **consulter un professionnel qualifié** (pédiatre, psychologue, ergothérapeute).
 **</CONTRAINTES_ET_LIMITES>**
@@ -275,76 +335,61 @@ Ton nom est Calma. Tu es un assistant IA spécialisé dans le soutien aux parent
 
     // Réponses contextuelles de démo
     if (lowerMessage.contains('bonjour') || lowerMessage.contains('salut')) {
-      return '''
-$header👋 Bonjour! Je suis Calma, votre assistant pour accompagner votre enfant autiste.
+      return '''Bonjour! Je suis Calma, votre assistant pour soutenir votre enfant autiste.
 
-**En mode démo actuellement** - Voici ce que je peux faire:
-
-🤝 **Soutien pratique:**
+Je peux vous aider avec:
 • Gestion des crises et du stress
 • Routines et transitions
 • Défis sensoriels et alimentaires
 • Sommeil et repos
 
-📊 **Avec Gemini activé:**
-• Analyse des données de monitoring
-• Conseils personnalisés
-• Stratégies adaptées
-
-🔧 **Pour activer l'IA complète:**
-1. Obtenez une clé sur https://makersuite.google.com/app/apikey
-2. Ajoutez-la dans lib/config/api_keys.dart
-
 Comment puis-je vous aider aujourd'hui?''';
     } else if (lowerMessage.contains('stress') ||
         lowerMessage.contains('crise')) {
       return '''
-$header😔 Je comprends votre inquiétude face au stress.
+$header
+Je comprends votre inquiétude face au stress.
 
 **Stratégies immédiates:**
-• 🏠 Espace calme et familier
-• 🎵 Musique douce ou bruits blancs  
-• 🤗 Objets sensoriels apaisants
-• 📝 Phrases courtes et rassurantes
+• Espace calme et familier
+• Musique douce ou bruits blancs  
+• Objets sensoriels apaisants
 
 **Prévention:**
-• 📅 Routines prévisibles
-• ⏰ Préparer les transitions
-• 👀 Observer les déclencheurs
+• Routines prévisibles
+• Préparer les transitions
 
 Que se passe-t-il exactement?''';
     } else if (lowerMessage.contains('sommeil') ||
         lowerMessage.contains('dormir')) {
       return '''
-$header🌙 Les défis de sommeil sont fréquents.
+$header
+Les défis de sommeil sont fréquents.
 
 **Stratégies efficaces:**
-• 🕰️ Routine fixe du coucher
-• 🌙 Environnement sensoriel adapté
-• 📱 Pas d'écrans 1h avant
-• 🛏️ Literie confortable
+• Routine fixe du coucher
+• Environnement sensoriel adapté
+• Pas d'écrans 1h avant
 
 **Aides sensorielles:**
 • Couverture lestée
-• Veilleuse adaptée  
 • Bruits blancs
 
 Comment se passent les nuits actuellement?''';
     } else if (lowerMessage.contains('manger') ||
         lowerMessage.contains('nourriture')) {
       return '''
-$header🍎 L'alimentation peut être complexe.
+$header
+L'alimentation peut être complexe.
 
 **Approches utiles:**
-• 🍽️ Présentation structurée
-• 👁️ Exposition progressive
-• 😊 Pas de pression
-• 📊 Journal alimentaire
+• Présentation structurée
+• Exposition progressive
+• Pas de pression
 
 **Gestion sensorielle:**
 • Textures progressives
 • Températures adaptées
-• Couleurs séparées
 
 Quels sont les défis spécifiques?''';
     } else {
@@ -392,22 +437,17 @@ Sur quel aspect aimeriez-vous de l'aide?''';
 
     _messageHistory.addAll([
       ChatMessage(
-        text:
-            '''👋 Bonjour! Je suis Calma, votre assistant spécialisé.
+        text: '''Hello! I'm Calma, your specialized assistant.
 
-💡 **Mon rôle:** Vous accompagner dans le parcours avec votre enfant autiste
+**My role:** Supporting you through your journey with your autistic child
 
-📊 **Je peux vous aider avec:**
-• Gestion du stress et des crises
-• Routines et transitions  
-• Défis sensoriels et alimentaires
-• Sommeil et analyse des données
+**I can help you with:**
+• Stress and crisis management
+• Routines and transitions  
+• Sensory and food challenges
+• Sleep and data analysis
 
-🔧 **Statut: ${_isInitialized ? 'Connecté à Gemini 🟢' : 'Mode Démo Actif 🟡'}**
-
-${_isInitialized ? '' : '💡 Pour activer l\'IA: Ajoutez votre clé API Gemini dans la configuration'}
-
-Comment puis-je vous soutenir aujourd'hui?''',
+How can I support you today?''',
         isUser: false,
         timestamp: DateTime.now().subtract(const Duration(minutes: 10)),
       ),

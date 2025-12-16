@@ -1,4 +1,6 @@
 // screens/dashboard/home_screen.dart
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +12,7 @@ import '../../models/sensor_data.dart';
 import '../../models/alert.dart';
 import '../../services/realtime_sensor_service.dart';
 import '../../services/vest_bluetooth_service.dart';
+import '../../services/weekly_stats_service.dart';
 import 'dart:math' as math;
 import '../../router/routes.dart';
 
@@ -25,8 +28,21 @@ class _HomeScreenState extends State<HomeScreen>
   int _currentBottomNavIndex = 0;
   bool _isInitializing = true;
   late AnimationController _pulseController;
-  bool _showCrisisPopup = false;
+  bool _showCrisisPopup = true;
+  Timer? _popupBlockerTimer;
+  // Weekly stats service for Firestore data
+  final WeeklyStatsService _weeklyStatsService = WeeklyStatsService();
 
+  // Cache weekly data from Firestore (update every 5 min)
+  DateTime? _lastWeeklyUpdateTime;
+  List<double>? _cachedWeeklyHeartRate;
+  List<double>? _cachedWeeklyBreathing;
+  List<double>? _cachedWeeklyMovement;
+  List<double>? _cachedWeeklyNoise;
+  List<double>? _cachedWeeklyStress;
+
+  bool _isLoadingWeeklyData = false;
+  List<double>? _cachedWeeklyAlerts;
   @override
   void initState() {
     super.initState();
@@ -40,7 +56,34 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void dispose() {
     _pulseController.dispose();
+    _popupBlockerTimer?.cancel();
     super.dispose();
+  }
+
+  void _onBottomNavTapped(int index) {
+    if (index == _currentBottomNavIndex) return;
+
+    setState(() {
+      _currentBottomNavIndex = index;
+    });
+
+    switch (index) {
+      case 0:
+        // Already on home
+        break;
+      case 1:
+        context.go(Routes.planner);
+        break;
+      case 2:
+        context.go(Routes.community);
+        break;
+      case 3:
+        context.go(Routes.chat);
+        break;
+      case 4:
+        context.go(Routes.profile);
+        break;
+    }
   }
 
   Future<void> _initializeProviders() async {
@@ -60,6 +103,9 @@ class _HomeScreenState extends State<HomeScreen>
       );
       monitoringProvider.initializeMonitoring();
       monitoringProvider.toggleMonitoring();
+
+      // Load weekly stats from Firestore
+      await _loadWeeklyStats();
     }
 
     if (mounted) {
@@ -67,24 +113,47 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  void _onBottomNavTapped(int index) {
-    if (index == _currentBottomNavIndex) return;
+  // Load weekly stats from Firestore
+  Future<void> _loadWeeklyStats() async {
+    final now = DateTime.now();
+    final shouldUpdate =
+        _lastWeeklyUpdateTime == null ||
+        now.difference(_lastWeeklyUpdateTime!).inMinutes >= 5;
 
-    switch (index) {
-      case 0:
-        break;
-      case 1:
-        context.go(Routes.planner);
-        break;
-      case 2:
-        context.go(Routes.community);
-        break;
-      case 3:
-        context.go(Routes.chat);
-        break;
-      case 4:
-        context.go(Routes.profile);
-        break;
+    if (!shouldUpdate &&
+        _cachedWeeklyHeartRate != null &&
+        _cachedWeeklyAlerts != null) {
+      // Check alerts too
+      return;
+    }
+
+    if (_isLoadingWeeklyData) return;
+
+    setState(() => _isLoadingWeeklyData = true);
+
+    try {
+      // Load weekly stats
+      final weeklyStats = await _weeklyStatsService.getWeeklyStatsAsLists();
+
+      // Load weekly alerts - ADD THIS
+      final weeklyAlerts = await _weeklyStatsService.getWeeklyAlertCounts();
+
+      if (mounted) {
+        setState(() {
+          _cachedWeeklyHeartRate = weeklyStats['maxHeartRate'];
+          _cachedWeeklyBreathing = weeklyStats['avgBreathingRate'];
+          _cachedWeeklyMovement = weeklyStats['maxMovement'];
+          _cachedWeeklyNoise = weeklyStats['maxNoise'];
+          _cachedWeeklyAlerts = weeklyAlerts; // <-- STORE ALERTS
+          _lastWeeklyUpdateTime = now;
+          _isLoadingWeeklyData = false;
+        });
+      }
+    } catch (e) {
+      print('❌ Error loading weekly stats: $e');
+      if (mounted) {
+        setState(() => _isLoadingWeeklyData = false);
+      }
     }
   }
 
@@ -99,8 +168,21 @@ class _HomeScreenState extends State<HomeScreen>
     final stressScore =
         monitoringProvider.currentSensorData?.stressScore ?? 0.0;
 
-    // Show crisis popup if stress is above threshold (only if not previously shown)
-    // Once closed by user, it won't reappear even if stress remains high
+    if (stressScore > 75 && _popupBlockerTimer == null) {
+      // Alert just started - hide popup and start 5-minute blocker timer
+      setState(() => _showCrisisPopup = false);
+
+      _popupBlockerTimer = Timer(const Duration(minutes: 5), () {
+        if (mounted) {
+          setState(() {
+            _showCrisisPopup = true; // Show popup again after 5 minutes
+            _popupBlockerTimer = null; // Reset timer for next alert
+          });
+        }
+      });
+
+      print('🚨 Alert detected - Hiding popup for 5 minutes');
+    }
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -223,7 +305,7 @@ class _HomeScreenState extends State<HomeScreen>
               color: const Color.fromARGB(255, 43, 43, 43),
               padding: EdgeInsets.zero,
               onPressed: () {
-                context.go('/notifications');
+                context.go('/home/notifications');
               },
             ),
           ),
@@ -235,8 +317,7 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildCurrentStatusCard(MonitoringProvider provider) {
     final sensorData = provider.currentSensorData;
     final stressScore = sensorData?.stressScore ?? 0.0;
-    // Invert stress score to calm score (low stress = high calm %)
-    final calmScore = 100.0 - stressScore;
+    // Display stress score directly (100% = very stressed, 0% = very calm)
     final statusText = _getStatusText(stressScore);
 
     return Container(
@@ -250,7 +331,7 @@ class _HomeScreenState extends State<HomeScreen>
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.2),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -336,7 +417,7 @@ class _HomeScreenState extends State<HomeScreen>
                 height: 200,
                 child: CustomPaint(
                   painter: OvalProgressPainter(
-                    percentage: calmScore / 100,
+                    percentage: stressScore / 100,
                     color: const Color(0xFF9BA9FF).withOpacity(0.3),
                     backgroundColor: Colors.transparent,
                   ),
@@ -345,7 +426,7 @@ class _HomeScreenState extends State<HomeScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          '${calmScore.round()}%',
+                          '${stressScore.round()}%',
                           style: const TextStyle(
                             fontSize: 48,
                             fontWeight: FontWeight.w400,
@@ -562,7 +643,7 @@ class _HomeScreenState extends State<HomeScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.greenAccent.withOpacity(0.2),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -648,8 +729,8 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildWeeklyStressChart(MonitoringProvider provider) {
-    // Get last 7 days of alert counts
-    final weeklyAlerts = _getWeeklyAlertCounts(provider.activeAlerts);
+    // Get weekly alert counts from Firestore
+    final weeklyAlerts = _cachedWeeklyAlerts ?? List<double>.filled(7, 0.0);
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -662,7 +743,7 @@ class _HomeScreenState extends State<HomeScreen>
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Color(0xFFEF4444).withOpacity(0.08),
+            color: Color(0xFFEF4444).withOpacity(0.2),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -722,8 +803,15 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildWeeklyHeartRateChart(MonitoringProvider provider) {
-    // Get last 7 days of data
-    final weeklyData = _getWeeklyAverages(provider.sensorHistory, false);
+    // Load weekly stats if needed
+    if (_cachedWeeklyHeartRate == null || _isLoadingWeeklyData) {
+      _loadWeeklyStats();
+    }
+
+    // Get last 7 days of data from Firestore cache
+    final weeklyData =
+        _cachedWeeklyHeartRate ??
+        List<double>.filled(7, 75.0); // Default baseline
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -736,7 +824,7 @@ class _HomeScreenState extends State<HomeScreen>
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Color(0xFF0066FF).withOpacity(0.2),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -799,8 +887,15 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildWeeklyBreathingChart(MonitoringProvider provider) {
-    // Get last 7 days of breathing data
-    final weeklyData = _getWeeklyBreathingAverages(provider.sensorHistory);
+    // Load weekly stats if needed
+    if (_cachedWeeklyBreathing == null || _isLoadingWeeklyData) {
+      _loadWeeklyStats();
+    }
+
+    // Get last 7 days of breathing data from Firestore cache
+    final weeklyData =
+        _cachedWeeklyBreathing ??
+        List<double>.filled(7, 18.0); // Default baseline
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -813,7 +908,7 @@ class _HomeScreenState extends State<HomeScreen>
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Color(0xFF0066FF).withOpacity(0.2),
             blurRadius: 20,
             offset: const Offset(0, 6),
           ),
@@ -876,11 +971,15 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildWeeklyMovementChart(MonitoringProvider provider) {
-    // Get last 7 days of maximum movement values
-    final weeklyMaxValues = _getWeeklyMaxValues(
-      provider.sensorHistory,
-      'motion',
-    );
+    // Load weekly stats if needed
+    if (_cachedWeeklyMovement == null || _isLoadingWeeklyData) {
+      _loadWeeklyStats();
+    }
+
+    // Get last 7 days of maximum movement values from Firestore cache
+    final weeklyMaxValues =
+        _cachedWeeklyMovement ??
+        List<double>.filled(7, 30.0); // Default baseline
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -893,7 +992,7 @@ class _HomeScreenState extends State<HomeScreen>
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Color(0xFF0066FF).withOpacity(0.08),
+            color: Color(0xFF0066FF).withOpacity(0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -936,11 +1035,14 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildWeeklyNoiseChart(MonitoringProvider provider) {
-    // Get last 7 days of maximum noise values
-    final weeklyMaxValues = _getWeeklyMaxValues(
-      provider.sensorHistory,
-      'noise',
-    );
+    // Load weekly stats if needed
+    if (_cachedWeeklyNoise == null || _isLoadingWeeklyData) {
+      _loadWeeklyStats();
+    }
+
+    // Get last 7 days of maximum noise values from Firestore cache
+    final weeklyMaxValues =
+        _cachedWeeklyNoise ?? List<double>.filled(7, 45.0); // Default baseline
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -953,7 +1055,7 @@ class _HomeScreenState extends State<HomeScreen>
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Color(0xFF0066FF).withOpacity(0.08),
+            color: Color(0xFF0066FF).withOpacity(0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -997,14 +1099,18 @@ class _HomeScreenState extends State<HomeScreen>
 
   Widget _buildWeekDayLabels() {
     final now = DateTime.now();
-    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    // We display the last 7 days, oldest (6 days ago) on the left,
+    // newest (today) on the right, to match the weekly stats order.
+    final List<String> days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: List.generate(7, (index) {
-        final dayIndex = (now.weekday - 7 + index + 1) % 7;
+        // For index 0..6, map to dates: 6 days ago .. today
+        final date = now.subtract(Duration(days: 6 - index));
+        final dayLabel = days[date.weekday - 1];
         return Text(
-          days[dayIndex],
+          dayLabel,
           style: TextStyle(
             fontSize: 12,
             color: Colors.grey[600],
@@ -1016,13 +1122,17 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildCompactWeekDayLabels() {
-    final days = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+    final now = DateTime.now();
+    // Compact labels for the last 7 days, oldest on the left, newest on the right
+    final List<String> days = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: List.generate(7, (index) {
+        final date = now.subtract(Duration(days: 6 - index));
+        final dayLabel = days[date.weekday - 1];
         return Text(
-          days[index],
+          dayLabel,
           style: TextStyle(
             fontSize: 10,
             color: Colors.grey[500],
@@ -1037,7 +1147,23 @@ class _HomeScreenState extends State<HomeScreen>
     List<SensorData> history,
     bool isStressScore,
   ) {
+    // WEEKLY GRAPHS: Update only every 5 minutes (not every 3 seconds)
+    // This keeps weekly graphs stable and prevents constant recalculation
     final now = DateTime.now();
+    final shouldUpdate =
+        _lastWeeklyUpdateTime == null ||
+        now.difference(_lastWeeklyUpdateTime!).inMinutes >= 5;
+
+    // Return cached data if available and still valid
+    if (!shouldUpdate) {
+      if (isStressScore && _cachedWeeklyStress != null) {
+        return _cachedWeeklyStress!;
+      } else if (!isStressScore && _cachedWeeklyHeartRate != null) {
+        return _cachedWeeklyHeartRate!;
+      }
+    }
+
+    // Recalculate weekly averages
     final weeklyAverages = List<double>.filled(7, 0.0);
     final counts = List<int>.filled(7, 0);
 
@@ -1060,14 +1186,22 @@ class _HomeScreenState extends State<HomeScreen>
       if (counts[i] > 0) {
         weeklyAverages[i] = weeklyAverages[i] / counts[i];
       } else {
-        // Use mock data if no real data available
+        // Use stable mock data (not random)
         if (isStressScore) {
-          weeklyAverages[i] = 30 + math.Random().nextDouble() * 40;
+          weeklyAverages[i] = 35.0; // Static value for empty days
         } else {
-          weeklyAverages[i] = 70 + math.Random().nextDouble() * 20;
+          weeklyAverages[i] = 75.0; // Static baseline heart rate
         }
       }
     }
+
+    // Cache the result
+    if (isStressScore) {
+      _cachedWeeklyStress = weeklyAverages;
+    } else {
+      _cachedWeeklyHeartRate = weeklyAverages;
+    }
+    _lastWeeklyUpdateTime = now;
 
     return weeklyAverages;
   }
@@ -1089,7 +1223,14 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   List<double> _getWeeklyBreathingAverages(List<SensorData> history) {
+    // Return cached data if still valid
     final now = DateTime.now();
+    if (_lastWeeklyUpdateTime != null &&
+        now.difference(_lastWeeklyUpdateTime!).inMinutes < 5 &&
+        _cachedWeeklyBreathing != null) {
+      return _cachedWeeklyBreathing!;
+    }
+
     final weeklyAverages = List<double>.filled(7, 0.0);
     final counts = List<int>.filled(7, 0);
 
@@ -1108,15 +1249,26 @@ class _HomeScreenState extends State<HomeScreen>
       if (counts[i] > 0) {
         weeklyAverages[i] = weeklyAverages[i] / counts[i];
       } else {
-        weeklyAverages[i] = 20 + math.Random().nextDouble() * 15;
+        weeklyAverages[i] = 18.0; // Static baseline
       }
     }
 
+    _cachedWeeklyBreathing = weeklyAverages;
     return weeklyAverages;
   }
 
   List<double> _getWeeklyMaxValues(List<SensorData> history, String type) {
+    // Return cached data if still valid
     final now = DateTime.now();
+    if (_lastWeeklyUpdateTime != null &&
+        now.difference(_lastWeeklyUpdateTime!).inMinutes < 5) {
+      if (type == 'motion' && _cachedWeeklyMovement != null) {
+        return _cachedWeeklyMovement!;
+      } else if (type == 'noise' && _cachedWeeklyNoise != null) {
+        return _cachedWeeklyNoise!;
+      }
+    }
+
     final weeklyMaxValues = List<double>.filled(7, 0.0);
 
     // Group data by day of week and find max (last 7 days)
@@ -1131,15 +1283,18 @@ class _HomeScreenState extends State<HomeScreen>
       }
     }
 
-    // Fill empty days with mock data
+    // Fill empty days with static baseline
     for (int i = 0; i < 7; i++) {
-      if (weeklyMaxValues[i] == 0) {
-        if (type == 'motion') {
-          weeklyMaxValues[i] = 30 + math.Random().nextDouble() * 50;
-        } else {
-          weeklyMaxValues[i] = 40 + math.Random().nextDouble() * 50;
-        }
+      if (weeklyMaxValues[i] == 0.0) {
+        weeklyMaxValues[i] = type == 'motion' ? 30.0 : 45.0;
       }
+    }
+
+    // Cache the result
+    if (type == 'motion') {
+      _cachedWeeklyMovement = weeklyMaxValues;
+    } else {
+      _cachedWeeklyNoise = weeklyMaxValues;
     }
 
     return weeklyMaxValues;

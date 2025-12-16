@@ -1,1 +1,0 @@
-- Fonction de calcul de stress score dans sensor_data.dart : to be updated soit plus precise soit b LSTM . 

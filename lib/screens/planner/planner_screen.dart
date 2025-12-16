@@ -1046,17 +1046,17 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                 onPressed: () {
                                   Navigator.pop(context);
                                 },
-                                child: const Padding(
-                                  padding: EdgeInsets.symmetric(
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
                                     horizontal: 20,
                                     vertical: 10,
                                   ),
-                                  child: Text(
-                                    'Cancel',
-                                    style: TextStyle(
-                                      color: Color(0xFF6B7280),
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                ),
+                                child: const Text(
+                                  'Cancel',
+                                  style: TextStyle(
+                                    color: Color(0xFF6B7280),
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),
@@ -1136,15 +1136,15 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                     backgroundColor: Colors.transparent,
                                     shadowColor: Colors.transparent,
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 24,
-                                      vertical: 12,
+                                      horizontal: 20,
+                                      vertical: 10,
                                     ),
                                   ),
                                   child: const Text(
                                     'Generate Tasks',
                                     style: TextStyle(
                                       color: Colors.white,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ),
@@ -1202,6 +1202,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.transparent,
                                     shadowColor: Colors.transparent,
+
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 24,
                                       vertical: 12,
@@ -1244,307 +1245,435 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 borderRadius: BorderRadius.circular(32),
               ),
               backgroundColor: Colors.transparent,
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                width: MediaQuery.of(context).size.width * 0.9,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFFE8ECFF),
-                      Color.fromRGBO(255, 255, 255, 1),
-                    ],
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
-                  ),
-                  borderRadius: BorderRadius.circular(32),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: 500,
+                  maxHeight: MediaQuery.of(context).size.height * 0.75,
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF0066FF),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.settings_outlined,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'Configure Default Tasks',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF1A1A1A),
-                          ),
-                        ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color(0xFFE8ECFF),
+                        Color.fromRGBO(255, 255, 255, 1),
                       ],
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
                     ),
-                    const SizedBox(height: 20),
-
-                    // Add new default todo
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF9FAFB),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                    borderRadius: BorderRadius.circular(32),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Row(
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header
+                        Row(
                           children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _defaultTodoController,
-                                decoration: const InputDecoration(
-                                  hintText: 'Add a daily task...',
-                                  hintStyle: TextStyle(
-                                    color: Color(0xFF9CA3AF),
-                                  ),
-                                  border: InputBorder.none,
-                                ),
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF0066FF),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.settings_outlined,
+                                color: Colors.white,
+                                size: 22,
                               ),
                             ),
-                            IconButton(
-                              onPressed: () {
-                                if (_defaultTodoController.text.isNotEmpty) {
-                                  context
-                                      .read<PlannerProvider>()
-                                      .addUserDefaultTodo(
-                                        _defaultTodoController.text,
-                                      );
-                                  _defaultTodoController.clear();
-                                  setState(() {});
-                                }
-                              },
-                              icon: Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: const Color(0xFF0066FF),
-                                ),
-                                child: const Icon(
-                                  Icons.add,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Configure Default Tasks',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF1A1A1A),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                        const SizedBox(height: 20),
 
-                    const Text(
-                      'These tasks will appear every day:',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF6B7280),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // List of default todos
-                    Container(
-                      height: 200,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF9FAFB),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
-                      ),
-                      child: defaultTodos.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(
-                                    Icons.star_outline,
-                                    size: 48,
-                                    color: Color(0xFF9CA3AF),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  const Text(
-                                    'No default tasks yet',
-                                    style: TextStyle(
-                                      color: Color(0xFF6B7280),
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : ListView.builder(
-                              padding: const EdgeInsets.all(8),
-                              itemCount: defaultTodos.length,
-                              itemBuilder: (context, index) {
-                                final todo = defaultTodos[index] as TodoItem;
-                                return Container(
-                                  margin: const EdgeInsets.only(bottom: 8),
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: const Color(0xFFE5E7EB),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.star,
-                                        color: Color(0xFFF59E0B),
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Text(
-                                          todo.title,
-                                          style: const TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w500,
-                                            color: Color(0xFF1F2937),
-                                          ),
-                                        ),
-                                      ),
-                                      IconButton(
-                                        onPressed: () {
-                                          context
-                                              .read<PlannerProvider>()
-                                              .removeUserDefaultTodo(todo.id);
-                                          setState(() {});
-                                        },
-                                        icon: Container(
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: const Color(0xFFFEE2E2),
-                                          ),
-                                          child: const Icon(
-                                            Icons.close,
-                                            size: 16,
-                                            color: Color(0xFFDC2626),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // AI Activation Toggle
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF9FAFB),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFD8BFD8),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.auto_awesome,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
+                        // Scrollable content
+                        Expanded(
+                          child: SingleChildScrollView(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
+                                // Add new default todo
                                 const Text(
-                                  'AI Daily Suggestions',
+                                  'Add a daily task:',
                                   style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 16,
-                                    color: Color(0xFF1A1A1A),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 15,
+                                    color: Color(0xFF374151),
                                   ),
                                 ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _defaultTodoController,
+                                        decoration: InputDecoration(
+                                          hintText:
+                                              'e.g., "Morning meditation"',
+                                          hintStyle: TextStyle(
+                                            color: Colors.grey[500],
+                                          ),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            borderSide: const BorderSide(
+                                              color: Color(0xFFE5E7EB),
+                                            ),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            borderSide: const BorderSide(
+                                              color: Color(0xFF0066FF),
+                                            ),
+                                          ),
+                                          filled: true,
+                                          fillColor: const Color(0xFFECF1FF),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 16,
+                                                vertical: 16,
+                                              ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Color(0xFF0066FF),
+                                      ),
+                                      child: IconButton(
+                                        onPressed: () {
+                                          if (_defaultTodoController
+                                              .text
+                                              .isNotEmpty) {
+                                            context
+                                                .read<PlannerProvider>()
+                                                .addUserDefaultTodo(
+                                                  _defaultTodoController.text,
+                                                );
+                                            _defaultTodoController.clear();
+                                            setState(() {});
+                                          }
+                                        },
+                                        icon: const Icon(
+                                          Icons.add,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
                                 Text(
-                                  isAiEnabled
-                                      ? '3 personalized tasks each day'
-                                      : 'Enable for daily AI-powered task suggestions',
+                                  'These tasks will appear automatically every day',
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: Colors.grey[600],
                                   ),
                                 ),
+                                const SizedBox(height: 20),
+
+                                // List of default todos
+                                const Text(
+                                  'Your daily tasks:',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 15,
+                                    color: Color(0xFF374151),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Container(
+                                  constraints: const BoxConstraints(
+                                    minHeight: 150,
+                                    maxHeight: 200,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEDF4FF),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: const Color(0xFFD1E3FF),
+                                    ),
+                                  ),
+                                  child: defaultTodos.isEmpty
+                                      ? Center(
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Container(
+                                                width: 56,
+                                                height: 56,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(
+                                                    color: const Color(
+                                                      0xFFD1E3FF,
+                                                    ),
+                                                    width: 2,
+                                                  ),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.task_alt_outlined,
+                                                  size: 28,
+                                                  color: Color(0xFFB8CCEB),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 12),
+                                              const Text(
+                                                'No default tasks yet',
+                                                style: TextStyle(
+                                                  color: Color(0xFF6B8DB8),
+                                                  fontSize: 15,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      : ListView.builder(
+                                          padding: const EdgeInsets.all(8),
+                                          itemCount: defaultTodos.length,
+                                          itemBuilder: (context, index) {
+                                            final todo = defaultTodos[index];
+                                            return Container(
+                                              margin: const EdgeInsets.only(
+                                                bottom: 8,
+                                              ),
+                                              padding: const EdgeInsets.all(12),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                                border: Border.all(
+                                                  color: const Color(
+                                                    0xFFD1E3FF,
+                                                  ),
+                                                ),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  Container(
+                                                    width: 28,
+                                                    height: 28,
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(
+                                                        0xFFF0F4FF,
+                                                      ),
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: const Icon(
+                                                      Icons
+                                                          .check_circle_outline,
+                                                      color: Color(0xFF8FA8D4),
+                                                      size: 18,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 12),
+                                                  Expanded(
+                                                    child: Text(
+                                                      todo.title,
+                                                      style: const TextStyle(
+                                                        fontSize: 15,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: Color(
+                                                          0xFF1F2937,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  IconButton(
+                                                    padding: EdgeInsets.zero,
+                                                    constraints:
+                                                        const BoxConstraints(),
+                                                    onPressed: () {
+                                                      context
+                                                          .read<
+                                                            PlannerProvider
+                                                          >()
+                                                          .removeUserDefaultTodo(
+                                                            todo.id,
+                                                          );
+                                                      setState(() {});
+                                                    },
+                                                    icon: Container(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                            4,
+                                                          ),
+                                                      decoration:
+                                                          const BoxDecoration(
+                                                            shape:
+                                                                BoxShape.circle,
+                                                            color: Color(
+                                                              0xFFEDF4FF,
+                                                            ),
+                                                          ),
+                                                      child: const Icon(
+                                                        Icons.close,
+                                                        size: 16,
+                                                        color: Color(
+                                                          0xFF6B8DB8,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                ),
+                                const SizedBox(height: 20),
+
+                                // AI Activation Toggle
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEDF4FF),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: const Color(0xFFD1E3FF),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFF0066FF),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.auto_awesome,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              'AI Daily Suggestions',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 16,
+                                                color: Color(0xFF1A1A1A),
+                                              ),
+                                            ),
+                                            Text(
+                                              isAiEnabled
+                                                  ? '3 personalized tasks each day'
+                                                  : 'Enable for daily AI-powered task suggestions',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: Colors.grey[600],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Switch(
+                                        value: isAiEnabled,
+                                        onChanged: (value) async {
+                                          await context
+                                              .read<PlannerProvider>()
+                                              .setAiEnabled(value);
+                                          setState(() {});
+                                        },
+                                        activeColor: const Color(0xFF0066FF),
+                                        trackColor:
+                                            MaterialStateProperty.resolveWith((
+                                              states,
+                                            ) {
+                                              if (states.contains(
+                                                MaterialState.selected,
+                                              )) {
+                                                return const Color(0xFF93B3FF);
+                                              }
+                                              return const Color(0xFFE5E7EB);
+                                            }),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
                           ),
-                          Switch(
-                            value: isAiEnabled,
-                            onChanged: (value) async {
-                              await context
-                                  .read<PlannerProvider>()
-                                  .setAiEnabled(value);
-                              setState(() {});
-                            },
-                            activeColor: const Color(0xFF9676AE),
-                            trackColor: MaterialStateProperty.all(
-                              const Color(0xFFD8BFD8),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
+                        ),
 
-                    // Close Button
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            color: const Color(0xFF0066FF),
-                          ),
-                          child: TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 32,
-                                vertical: 10,
+                        const SizedBox(height: 24),
+
+                        // Close Button
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                color: const Color(0xFF0066FF),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(
+                                      0xFF0066FF,
+                                    ).withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
                               ),
-                              child: Text(
-                                'Close',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
+                              child: TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 32,
+                                    vertical: 10,
+                                  ),
+                                  child: Text(
+                                    'Done',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             );

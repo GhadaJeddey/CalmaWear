@@ -30,7 +30,12 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp.router(
         title: 'CalmaWear',
-        theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          useMaterial3: true,
+          fontFamily: 'League Spartan',
+          fontFamilyFallback: const ['Noto', 'NotoEmoji'],
+        ),
         routerConfig: goRouter, // Use GoRouter
         debugShowCheckedModeBanner: false,
       ),

@@ -490,28 +490,28 @@ class _ChatScreenState extends State<ChatScreen> {
         data: text,
         styleSheet: MarkdownStyleSheet(
           p: TextStyle(
-            color: isUser ? Colors.white : Colors.black87,
+            color: Colors.black87,
             fontSize: 15,
             height: 1.5,
             fontFamily: 'League Spartan',
           ),
           strong: TextStyle(
-            color: isUser ? Colors.white : Colors.black87,
+            color: Colors.black87,
             fontWeight: FontWeight.bold,
             fontFamily: 'League Spartan',
           ),
           em: TextStyle(
-            color: isUser ? Colors.white : Colors.black87,
+            color: Colors.black87,
             fontStyle: FontStyle.italic,
             fontFamily: 'League Spartan',
           ),
           blockquote: TextStyle(
-            color: isUser ? Colors.white70 : Colors.black54,
+            color: Colors.black54,
             fontStyle: FontStyle.italic,
             fontFamily: 'League Spartan',
           ),
           listBullet: TextStyle(
-            color: isUser ? Colors.white : Colors.black87,
+            color: Colors.black87,
             fontSize: 15,
             fontFamily: 'League Spartan',
           ),

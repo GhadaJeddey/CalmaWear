@@ -148,7 +148,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                     Icons.arrow_back,
                                     color: Color(0xFF0066FF),
                                   ),
-                                  onPressed: () => context.go('/child-profile'),
+                                  onPressed: () => context.go('/welcome'),
                                 ),
                               ),
 
@@ -194,15 +194,11 @@ class _SignupScreenState extends State<SignupScreen> {
                                   ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Colors.grey,
-                                    ),
+                                    borderSide: BorderSide.none,
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Colors.grey,
-                                    ),
+                                    borderSide: BorderSide.none,
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -239,15 +235,11 @@ class _SignupScreenState extends State<SignupScreen> {
                                   ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Colors.grey,
-                                    ),
+                                    borderSide: BorderSide.none,
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Colors.grey,
-                                    ),
+                                    borderSide: BorderSide.none,
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -293,15 +285,11 @@ class _SignupScreenState extends State<SignupScreen> {
                                   ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Colors.grey,
-                                    ),
+                                    borderSide: BorderSide.none,
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Colors.grey,
-                                    ),
+                                    borderSide: BorderSide.none,
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -311,7 +299,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                     ),
                                   ),
                                   filled: true,
-                                  fillColor: Colors.grey[50],
+                                  fillColor: const Color(0xFFECF1FF),
                                 ),
                                 keyboardType: TextInputType.emailAddress,
                                 validator: (value) {
@@ -344,15 +332,11 @@ class _SignupScreenState extends State<SignupScreen> {
                                   ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Colors.grey,
-                                    ),
+                                    borderSide: BorderSide.none,
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Colors.grey,
-                                    ),
+                                    borderSide: BorderSide.none,
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -362,7 +346,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                     ),
                                   ),
                                   filled: true,
-                                  fillColor: Colors.grey[50],
+                                  fillColor: const Color(0xFFECF1FF),
                                 ),
                               ),
 
@@ -432,9 +416,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                                 border: OutlineInputBorder(
                                                   borderRadius:
                                                       BorderRadius.circular(12),
-                                                  borderSide: const BorderSide(
-                                                    color: Colors.grey,
-                                                  ),
+                                                  borderSide: BorderSide.none,
                                                 ),
                                                 enabledBorder:
                                                     OutlineInputBorder(
@@ -443,9 +425,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                                             12,
                                                           ),
                                                       borderSide:
-                                                          const BorderSide(
-                                                            color: Colors.grey,
-                                                          ),
+                                                          BorderSide.none,
                                                     ),
                                                 focusedBorder:
                                                     OutlineInputBorder(
@@ -462,7 +442,9 @@ class _SignupScreenState extends State<SignupScreen> {
                                                           ),
                                                     ),
                                                 filled: true,
-                                                fillColor: Colors.grey[50],
+                                                fillColor: const Color(
+                                                  0xFFECF1FF,
+                                                ),
                                               ),
                                               keyboardType: TextInputType.phone,
                                               validator: (value) {
@@ -549,15 +531,11 @@ class _SignupScreenState extends State<SignupScreen> {
                                   ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Colors.grey,
-                                    ),
+                                    borderSide: BorderSide.none,
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Colors.grey,
-                                    ),
+                                    borderSide: BorderSide.none,
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -567,7 +545,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                     ),
                                   ),
                                   filled: true,
-                                  fillColor: Colors.grey[50],
+                                  fillColor: const Color(0xFFECF1FF),
                                 ),
                                 obscureText: _obscurePassword,
                                 validator: _validatePassword,
@@ -604,15 +582,11 @@ class _SignupScreenState extends State<SignupScreen> {
                                   ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Colors.grey,
-                                    ),
+                                    borderSide: BorderSide.none,
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Colors.grey,
-                                    ),
+                                    borderSide: BorderSide.none,
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -622,7 +596,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                     ),
                                   ),
                                   filled: true,
-                                  fillColor: Colors.grey[50],
+                                  fillColor: const Color(0xFFECF1FF),
                                 ),
                                 obscureText: _obscureConfirmPassword,
                                 validator: _validateConfirmPassword,

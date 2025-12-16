@@ -474,19 +474,21 @@ CHILD INFORMATION:
       final prompt =
           '''
 Tu es Calma, assistant IA spécialisé pour parents d'enfants autistes.
-Génère EXACTEMENT 3 à 5 tâches quotidiennes adaptées aux parents d'enfants autistes ou aux enfants en soi et au contexte suivant.
+Génère EXACTEMENT 3 à 5 tâches quotidiennes COURTES ET CONCISES adaptées aux parents d'enfants autistes ou aux enfants en soi et au contexte suivant.
 $childContext
 Contexte de l'utilisateur: "$userContext"
 
 RÈGLES IMPORTANTES:
 - Génère entre 3 et 5 tâches
+- Chaque tâche doit être TRÈS COURTE (maximum 5-8 mots)
 - Une tâche par ligne
 - Commence chaque ligne par un tiret suivi d'un espace: "- "
 - Tâches réalisables et personnalisées selon l'enfant
 - Prends en compte l'âge, le nom et les déclencheurs de l'enfant
 - Adapte le langage et les suggestions au contexte familial
+- Sois BREF et DIRECT, évite les phrases longues
 
-Génère maintenant 3 à 5 tâches adaptées au contexte:
+Génère maintenant 3 à 5 tâches COURTES adaptées au contexte:
 ''';
 
       if (_debugMode) debugPrint('📤 Envoi de la requête à Gemini...');
