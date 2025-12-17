@@ -99,6 +99,43 @@ cd CalmaWear
 - **Data Storage**: Synced to Firebase (Firestore for daily/weekly stats, Realtime DB for live data).
 - **Stress Detection**: App sends sensor data to the Python API, which returns a stress score.
 - **Visualization**: Dashboard displays real-time and historical data with charts and summaries.
+  
+## Embedded System (Wearable Hardware)
+
+The wearable device is built around an **ESP32-WROOM-32** microcontroller and is responsible for real-time physiological data acquisition and preprocessing before transmission to the CalmaWear application via **Bluetooth Classic**.
+
+### Sensors & Signals
+- **MAX30102**: Heart rate measurement and RR interval extraction
+- **FSR402**: Breathing activity detection based on chest pressure variations
+- **MPU6050**: Motion and agitation detection using acceleration magnitude
+- **KY-038**: Ambient noise level estimation
+
+### Signal Processing
+The firmware performs on-device processing to reduce noise and extract meaningful metrics:
+- Heart Rate (BPM)
+- Heart Rate Variability (RMSSD)
+- Breathing Rate (RPM)
+- Motion intensity (acceleration magnitude)
+- Noise level (ADC averaging)
+
+A rule-based stress scoring algorithm classifies the child’s state into:
+- **CALM**
+- **STRESSED**
+- **CRISIS**
+
+### Bluetooth Communication
+Processed data is transmitted using **Bluetooth Classic** in a lightweight, app-friendly text format:
+
+RPM=18.4 BPM=82.1 RMSSD=42.3 ACC=0.31 MIC=420 SCORE=3 STATE=STRESSED
+
+This format allows seamless parsing by the Flutter application for real-time visualization and further analysis.
+
+### Firmware Responsibilities
+- Sensor initialization and calibration
+- Real-time data acquisition
+- Physiological metric computation
+- Stress state estimation
+- Bluetooth communication with mobile application
 
 ## Key Files
 - `lib/main.dart` — App entry point
