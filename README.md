@@ -10,39 +10,27 @@ CalmaWear enables continuous monitoring of physiological signals such as heart r
 
 ### Frontend (Client Application)
 - **Flutter (Dart)** — Cross-platform UI for Android, iOS, Web, Windows, macOS, and Linux  
-  [https://docs.flutter.dev](https://docs.flutter.dev)
 - **Bluetooth Classic** — Real-time communication with the wearable device  
-  [https://www.bluetooth.com/specifications/specs/](https://www.bluetooth.com/specifications/specs/)
 
 ### Backend & Machine Learning
 - **Python** — Backend and ML development  
-  [https://www.python.org](https://www.python.org)
 - **FastAPI** — High-performance REST API for stress prediction  
-  [https://fastapi.tiangolo.com](https://fastapi.tiangolo.com)
 - **LSTM (Long Short-Term Memory)** — Time-series stress prediction model  
-  [https://ieeexplore.ieee.org/document/6795963](https://ieeexplore.ieee.org/document/6795963)
-- **TensorFlow / Keras** — Neural network implementation  
-  [https://www.tensorflow.org/guide/keras/rnn](https://www.tensorflow.org/guide/keras/rnn)
-
+- **TensorFlow / Keras** — Neural network implementation
+  
 ### Cloud & Database
 - **Firebase Authentication** — User authentication
 - **Cloud Firestore** — Persistent weekly and daily statistics
 - **Firebase Realtime Database** — Live sensor data streaming  
-  Firebase documentation: [https://firebase.google.com/docs](https://firebase.google.com/docs)
 
 ### Embedded System (Wearable Hardware)
 - **ESP32-WROOM-32** — Main microcontroller  
-  [https://www.espressif.com/en/products/socs/esp32](https://www.espressif.com/en/products/socs/esp32)
 
 #### Sensors
 - **MAX30102** — Heart rate and RR interval measurement  
-  [https://www.analog.com/en/products/max30102.html](https://www.analog.com/en/products/max30102.html)
 - **FSR402** — Breathing activity detection  
-  [https://www.interlinkelectronics.com/fsr-402](https://www.interlinkelectronics.com/fsr-402)
 - **MPU6050** — Motion and agitation detection  
-  [https://invensense.tdk.com/products/motion-tracking/6-axis/mpu-6050](https://invensense.tdk.com/products/motion-tracking/6-axis/mpu-6050)
 - **KY-038** — Ambient noise estimation  
-  [https://www.handsontec.com/dataspecs/KY-038.pdf](https://www.handsontec.com/dataspecs/KY-038.pdf)
 
 ## Features
 
@@ -69,14 +57,6 @@ CalmaWear enables continuous monitoring of physiological signals such as heart r
 - Community events
 - Story sharing
 - In-app chat between users
-
-### Cross-Platform Support
-- Android
-- iOS
-- Web
-- Windows
-- macOS
-- Linux
 
 ## Embedded System Architecture
 
