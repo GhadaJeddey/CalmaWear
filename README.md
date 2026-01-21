@@ -1,161 +1,127 @@
-CalmaWear
+# CalmaWear
 
-CalmaWear is a cross-platform wearable health monitoring application built with Flutter and Python. It integrates real-time physiological data collection, stress detection using machine learning, and a user-friendly dashboard for visualization and community support.
+CalmaWear is a cross-platform wearable health monitoring system designed to collect real-time physiological data, detect stress using machine learning, and provide meaningful visualizations and community support through a user-friendly application. The system combines embedded hardware, a Flutter multi-platform application, and a Python machine-learning backend to deliver end-to-end health monitoring and stress analysis.
+
+## Project Overview
+
+CalmaWear enables continuous monitoring of physiological signals such as heart rate, breathing rate, motion, noise level, and temperature using a wearable device. The collected data is processed locally on the wearable, transmitted via Bluetooth, visualized in real time in the application, and analyzed using machine learning models to estimate stress levels.
+
+## Tech Stack
+
+### Frontend (Client Application)
+- **Flutter (Dart)** — Cross-platform UI for Android, iOS, Web, Windows, macOS, and Linux  
+  [https://docs.flutter.dev](https://docs.flutter.dev)
+- **Bluetooth Classic** — Real-time communication with the wearable device  
+  [https://www.bluetooth.com/specifications/specs/](https://www.bluetooth.com/specifications/specs/)
+
+### Backend & Machine Learning
+- **Python** — Backend and ML development  
+  [https://www.python.org](https://www.python.org)
+- **FastAPI** — High-performance REST API for stress prediction  
+  [https://fastapi.tiangolo.com](https://fastapi.tiangolo.com)
+- **LSTM (Long Short-Term Memory)** — Time-series stress prediction model  
+  [https://ieeexplore.ieee.org/document/6795963](https://ieeexplore.ieee.org/document/6795963)
+- **TensorFlow / Keras** — Neural network implementation  
+  [https://www.tensorflow.org/guide/keras/rnn](https://www.tensorflow.org/guide/keras/rnn)
+
+### Cloud & Database
+- **Firebase Authentication** — User authentication
+- **Cloud Firestore** — Persistent weekly and daily statistics
+- **Firebase Realtime Database** — Live sensor data streaming  
+  Firebase documentation: [https://firebase.google.com/docs](https://firebase.google.com/docs)
+
+### Embedded System (Wearable Hardware)
+- **ESP32-WROOM-32** — Main microcontroller  
+  [https://www.espressif.com/en/products/socs/esp32](https://www.espressif.com/en/products/socs/esp32)
+
+#### Sensors
+- **MAX30102** — Heart rate and RR interval measurement  
+  [https://www.analog.com/en/products/max30102.html](https://www.analog.com/en/products/max30102.html)
+- **FSR402** — Breathing activity detection  
+  [https://www.interlinkelectronics.com/fsr-402](https://www.interlinkelectronics.com/fsr-402)
+- **MPU6050** — Motion and agitation detection  
+  [https://invensense.tdk.com/products/motion-tracking/6-axis/mpu-6050](https://invensense.tdk.com/products/motion-tracking/6-axis/mpu-6050)
+- **KY-038** — Ambient noise estimation  
+  [https://www.handsontec.com/dataspecs/KY-038.pdf](https://www.handsontec.com/dataspecs/KY-038.pdf)
 
 ## Features
 
-- **Real-time Sensor Data**: Collects heart rate, breathing rate, movement, noise, and temperature from wearable devices.
-- **Stress Detection**: Uses an LSTM-based model (Python API) to predict stress levels from physiological signals.
-- **Weekly & Daily Statistics**: Aggregates and visualizes daily and weekly maximums and averages for key health metrics.
-- **Firebase Integration**: Stores user data, authentication, and statistics in Firebase (Firestore and Realtime Database).
-- **Community & Chat**: Users can join community events, share stories, and chat with others.
-- **Cross-Platform**: Supports Android, iOS, Web, Windows, MacOS, and Linux.
+### Real-time Sensor Monitoring
+- Heart rate (BPM)
+- Heart rate variability (RMSSD)
+- Breathing rate (RPM)
+- Motion intensity
+- Ambient noise level
 
-## Project Structure
+### Stress Detection
+- On-device rule-based stress scoring
+- LSTM-based stress prediction via Python API
 
-```
-calma_wear/
-├── android/           # Android native project
-├── assets/            # Fonts and images
-├── build/             # Build outputs
-├── docs/              # Documentation
-├── ios/               # iOS native project
-├── lib/               # Main Flutter/Dart code
-│   ├── config/        # Environment and API keys
-│   ├── models/        # Data models
-│   ├── providers/     # State management
-│   ├── router/        # App routing
-│   ├── screens/       # UI screens (dashboard, auth, etc.)
-│   ├── services/      # Firebase, Bluetooth, API services
-│   ├── utils/         # Utilities and constants
-│   └── widgets/       # Reusable UI components
-├── macos/             # macOS native project
-├── stress_api/        # Python FastAPI backend for stress detection
-├── test/              # Dart/Flutter tests
-├── web/               # Web assets
-├── windows/           # Windows native project
-├── pubspec.yaml       # Flutter dependencies
-├── firebase.json      # Firebase config
-├── README.md          # Project documentation
-```
+### Statistics & Insights
+- Daily and weekly averages and maximums
+- Historical health trend visualization
 
-## Getting Started
+### Firebase Integration
+- Secure authentication
+- Real-time and persistent data storage
 
-### Prerequisites
-- [Flutter SDK](https://flutter.dev/docs/get-started/install)
-- [Python 3.8+](https://www.python.org/downloads/)
-- [Firebase Project](https://console.firebase.google.com/)
-- (Optional) Android Studio / Xcode for mobile builds
+### Community & Chat
+- Community events
+- Story sharing
+- In-app chat between users
 
-### 1. Clone the Repository
-```sh
-git clone https://github.com/GhadaJeddey/CalmaWear.git
-cd CalmaWear
-```
+### Cross-Platform Support
+- Android
+- iOS
+- Web
+- Windows
+- macOS
+- Linux
 
-### 2. Flutter Setup
-- Install dependencies:
-	```sh
-	flutter pub get
-	```
-- Configure Firebase:
-	- Add your `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) to the respective folders.
-	- Update `lib/config/env.dart` and `lib/firebase_options.dart` with your Firebase project info.
-- Run the app:
-	```sh
-	flutter run
-	```
+## Embedded System Architecture
 
-### 3. Python Stress API Setup
-- Navigate to the API folder:
-	```sh
-	cd stress_api
-	pip install -r requirements.txt
-	```
-- Start the API server:
-	```sh
-	uvicorn app:app --reload
-	```
-- The API will be available at `http://127.0.0.1:8000`.
+The wearable device is built around an ESP32-WROOM-32 microcontroller and performs the following tasks:
 
-### 4. Web & Desktop
-- For web:
-	```sh
-	flutter run -d chrome
-	```
-- For Windows/Mac/Linux:
-	```sh
-	flutter run -d windows  # or macos, linux
-	```
+- Sensor initialization and calibration
+- Real-time physiological data acquisition
+- Noise filtering and feature extraction
+- Stress state estimation
+- Bluetooth Classic data transmission
 
-## Firebase Setup
-- Create a Firebase project in the [Firebase Console](https://console.firebase.google.com/).
-- Enable Authentication (Email/Password, Google, etc.).
-- Enable Firestore and Realtime Database.
-- Download and add your platform-specific config files.
+### Stress States
 
-## Data Flow
-- **Sensor Data**: Collected via Bluetooth and sent to the app.
-- **Data Storage**: Synced to Firebase (Firestore for daily/weekly stats, Realtime DB for live data).
-- **Stress Detection**: App sends sensor data to the Python API, which returns a stress score.
-- **Visualization**: Dashboard displays real-time and historical data with charts and summaries.
-  
-## Embedded System (Wearable Hardware)
+The system classifies stress into:
 
-The wearable device is built around an **ESP32-WROOM-32** microcontroller and is responsible for real-time physiological data acquisition and preprocessing before transmission to the CalmaWear application via **Bluetooth Classic**.
-
-### Sensors & Signals
-- **MAX30102**: Heart rate measurement and RR interval extraction
-- **FSR402**: Breathing activity detection based on chest pressure variations
-- **MPU6050**: Motion and agitation detection using acceleration magnitude
-- **KY-038**: Ambient noise level estimation
-
-### Signal Processing
-The firmware performs on-device processing to reduce noise and extract meaningful metrics:
-- Heart Rate (BPM)
-- Heart Rate Variability (RMSSD)
-- Breathing Rate (RPM)
-- Motion intensity (acceleration magnitude)
-- Noise level (ADC averaging)
-
-A rule-based stress scoring algorithm classifies the child’s state into:
 - **CALM**
 - **STRESSED**
 - **CRISIS**
 
-### Bluetooth Communication
-Processed data is transmitted using **Bluetooth Classic** in a lightweight, app-friendly text format:
+### Bluetooth Data Format
 
-RPM=18.4 BPM=82.1 RMSSD=42.3 ACC=0.31 MIC=420 SCORE=3 STATE=STRESSED
+The wearable transmits processed data using a lightweight text-based format:
+```
+RPM=18.4
+BPM=82.1
+RMSSD=42.3
+ACC=0.31
+MIC=420
+SCORE=3
+STATE=STRESSED
+```
 
-This format allows seamless parsing by the Flutter application for real-time visualization and further analysis.
+This format allows efficient parsing and real-time visualization in the Flutter application.
 
-### Firmware Responsibilities
-- Sensor initialization and calibration
-- Real-time data acquisition
-- Physiological metric computation
-- Stress state estimation
-- Bluetooth communication with mobile application
-
-## Key Files
-- `lib/main.dart` — App entry point
-- `lib/screens/dashboard/home_screen.dart` — Main dashboard UI
-- `lib/services/weekly_stats_service.dart` — Firestore weekly stats logic
-- `lib/services/realtime_sensor_service.dart` — Real-time data logic
-- `stress_api/app.py` — Python FastAPI backend
-
-## Testing
-- Flutter: `flutter test`
-- Python API: `pytest` or run `test_api.py`
-
-## Contributing
-1. Fork the repo and create your branch: `git checkout -b feature/your-feature`
-2. Commit your changes: `git commit -am 'Add new feature'`
-3. Push to the branch: `git push origin feature/your-feature`
-4. Open a Pull Request
+## Solution Demo 
+https://github.com/user-attachments/assets/349989b3-7a66-430c-bba1-69f242a926ea
 
 ## License
-This project is licensed under the MIT License.
+
+This project is licensed under the MIT License.  
+[https://opensource.org/licenses/MIT](https://opensource.org/licenses/MIT)
 
 ## Contact
-For questions or support, open an issue or contact the maintainer via GitHub.
+
+For questions, feedback, or support:
+
+- Open an Issue in this repository
+- Contact the maintainer via GitHub
